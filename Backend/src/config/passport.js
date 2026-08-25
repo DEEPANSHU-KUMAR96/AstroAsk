@@ -1,15 +1,16 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import User from "../models/user.model.js";
+import { config } from "./config.js";
 
 export function configurePassport() {
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) return;
+  if (!config.GOOGLE_CLIENT_ID || !config.GOOGLE_CLIENT_SECRET) return;
 
   passport.use(new GoogleStrategy(
     {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL || "/api/auth/google/callback",
+      clientID: config.GOOGLE_CLIENT_ID,
+      clientSecret: config.GOOGLE_CLIENT_SECRET,
+      callbackURL: config.GOOGLE_CALLBACK_URL,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -26,9 +27,9 @@ export function configurePassport() {
               authProvider: "google",
               isVerified: true,
             },
-            $setOnInsert: { email, name: profile.displayName },
+            $setOnInsert: { email },
           },
-          { new: true, upsert: true, runValidators: true },
+          { returnDocument: "after", upsert: true, runValidators: true },
         );
         done(null, user);
       } catch (error) {

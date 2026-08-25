@@ -33,6 +33,11 @@ if (!process.env.GOOGLE_CLIENT_SECRET) {
     throw new Error("GOOGLE_CLIENT_SECRET is not defined");
 }
 
+if(!process.env.GOOGLE_CALLBACK_URL) {
+    throw new Error("GOOGLE_CALLBACK_URL is not defined");
+}
+
+
 export const config = {
     PORT: process.env.PORT,
     Mongo_URI: process.env.MONGO_URI,
@@ -48,5 +53,7 @@ export const config = {
     SMTP_USER: process.env.SMTP_USER || process.env.GOOGLE_USER,
     SMTP_PASS: process.env.SMTP_PASS || process.env.GOOGLE_APP_PASSWORD,
     EMAIL_FROM: process.env.EMAIL_FROM || process.env.GOOGLE_USER,
+    FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
+
 
 }
