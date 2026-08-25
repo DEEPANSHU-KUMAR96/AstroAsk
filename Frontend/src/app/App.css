@@ -1,0 +1,315 @@
+@import "tailwindcss";
+
+/* ─── Design Tokens ────────────────────────────────────────── */
+:root {
+  --color-primary: #7c5800;
+  --color-gold-accent: #ffb800;
+  --color-gold-hover: #ffba20;
+  --color-charcoal-deep: #1a1a1a;
+  --color-surface: #fbf9f8;
+  --color-surface-cream: #fdfcf9;
+  --color-secondary: #5f5e5e;
+  --color-on-surface-var: #514532;
+  --color-border-fine: rgba(26, 26, 26, 0.1);
+  --color-border-input: rgba(26, 26, 26, 0.2);
+  --color-error: #ba1a1a;
+  --color-error-bg: #ffdad6;
+  --font-heading: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', -apple-system, sans-serif;
+}
+
+/* ─── Base Reset ───────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-surface);
+  color: var(--color-charcoal-deep);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ─── Typography Helpers ───────────────────────────────────── */
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+/* ─── Glassmorphic Panel ───────────────────────────────────── */
+.glass-panel {
+  background: rgba(253, 252, 249, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 0.5px solid rgba(26, 26, 26, 0.1);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.05), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+}
+
+/* ─── Premium Input ────────────────────────────────────────── */
+.premium-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-border-input);
+  border-radius: 0;
+  padding: 10px 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--color-charcoal-deep);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.premium-input:focus {
+  outline: none;
+  border-bottom-color: var(--color-gold-accent);
+  box-shadow: 0 1px 0 0 var(--color-gold-accent);
+}
+
+.premium-input::placeholder {
+  color: rgba(26, 26, 26, 0.28);
+}
+
+/* date/time input tweak */
+.premium-input[type="date"],
+.premium-input[type="time"] {
+  color-scheme: light;
+}
+
+/* ─── Input Glow Line ──────────────────────────────────────── */
+.input-glow-line {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--color-gold-accent) 50%, transparent 100%);
+  opacity: 0;
+  transform: scaleX(0.3);
+  transform-origin: center;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
+}
+
+.premium-input:focus~.input-glow-line {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+/* ─── Cosmic Ambient Background ───────────────────────────── */
+.cosmic-bg {
+  position: relative;
+  background-color: var(--color-surface);
+  background-image:
+    radial-gradient(ellipse at 10% 40%, rgba(255, 184, 0, 0.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 90% 20%, rgba(124, 88, 0, 0.04) 0%, transparent 45%);
+}
+
+.cosmic-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231a1a1a' fill-opacity='0.025'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── Subtle Float Animation ───────────────────────────────── */
+@keyframes subtleFloat {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float {
+  animation: subtleFloat 7s ease-in-out infinite;
+}
+
+/* ─── Fade-in Slide Up ─────────────────────────────────────── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* ─── Progress Bar Shimmer ─────────────────────────────────── */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* ─── Gold Button ──────────────────────────────────────────── */
+.btn-gold {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--color-gold-accent);
+  color: var(--color-charcoal-deep);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 18px 32px;
+  border-radius: 2px;
+  border: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition: background-color 0.3s ease, transform 0.15s ease, box-shadow 0.3s ease;
+}
+
+.btn-gold::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(100%);
+  transition: transform 0.5s ease;
+}
+
+.btn-gold:hover::after {
+  transform: translateY(0);
+}
+
+.btn-gold:hover {
+  background: var(--color-gold-hover);
+  box-shadow: 0 8px 24px rgba(255, 184, 0, 0.3);
+}
+
+.btn-gold:active {
+  transform: scale(0.98);
+}
+
+.btn-gold:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ─── Text Button ──────────────────────────────────────────── */
+.btn-text {
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-secondary);
+  cursor: pointer;
+  padding: 10px 16px;
+  transition: color 0.2s ease;
+}
+
+.btn-text:hover {
+  color: var(--color-charcoal-deep);
+}
+
+/* ─── Label Caps ───────────────────────────────────────────── */
+.label-caps {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* ─── Custom Checkbox ──────────────────────────────────────── */
+.custom-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.custom-checkbox input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--color-border-input);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.custom-checkbox input[type="checkbox"]:checked {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.custom-checkbox input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 5px;
+  width: 5px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+/* ─── Error / Success Toast override (react-hot-toast) ─────── */
+/* We use react-hot-toast so styles are auto-injected, nothing needed */
+
+/* ─── Scrollbar ────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(26, 26, 26, 0.15);
+  border-radius: 3px;
+}
+
+/* ─── Selection ────────────────────────────────────────────── */
+::selection {
+  background: var(--color-gold-accent);
+  color: var(--color-charcoal-deep);
+}
