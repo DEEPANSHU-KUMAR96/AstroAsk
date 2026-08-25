@@ -164,7 +164,7 @@ userSchema.methods.isPlanActive = function () {
     return this.planExpiresAt && this.planExpiresAt > new Date();
 };
 
-// toJSON: Sensitive fields hata do 
+// toJSON: for sensitive data remove
 userSchema.methods.toJSON = function () {
     const obj = this.toObject();
     delete obj.password;

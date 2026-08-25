@@ -8,7 +8,7 @@ import {
     getMe, updateProfile, changePassword,
     googleAuth, googleCallback,
 } from "../controllers/auth.controllers.js";
-import { protect, requireVerified } from "../middlewares/auth.js";
+import { protect, requireVerified } from "../middleware/auth.js";
 import validate from "../middleware/validate.js";
 import { body } from "express-validator";
 import { registerRules, loginRules, otpRules, resetRules } from "../validators/auth.validator.js";
