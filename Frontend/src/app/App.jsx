@@ -1,11 +1,11 @@
 import React from "react";
-import { BrowserRouter } from "react-router-dom";
+import { RouterProvider } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import AppRoutes from "./App.routes";
+import { router } from "./App.routes";
 
 const App = () => {
   return (
-    <BrowserRouter>
+    <>
       {/* Global toast notifications */}
       <Toaster
         position="top-center"
@@ -30,8 +30,8 @@ const App = () => {
           },
         }}
       />
-      <AppRoutes />
-    </BrowserRouter>
+      <RouterProvider router={router} />
+    </>
   );
 };
 
