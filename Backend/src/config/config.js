@@ -33,14 +33,22 @@ if (!process.env.GOOGLE_CLIENT_SECRET) {
     throw new Error("GOOGLE_CLIENT_SECRET is not defined");
 }
 
-if(!process.env.GOOGLE_CALLBACK_URL) {
+if (!process.env.GOOGLE_CALLBACK_URL) {
     throw new Error("GOOGLE_CALLBACK_URL is not defined");
+}
+if (!process.env.GROQ_API_KEY) {
+    throw new Error("GROQ_API_KEY is not defined");
+}
+if (!process.env.MISTRAL_API_KEY) {
+    throw new Error("MISTRAL_API_KEY is not defined");
 }
 
 
 export const config = {
     PORT: process.env.PORT,
     Mongo_URI: process.env.MONGO_URI,
+    MISTRAL_API: process.env.MISTRAL_API_KEY,
+    GROQ_API_KEY: process.env.GROQ_API_KEY,
     JWT_SECRET: process.env.JWT_SECRET,
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN,
     JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,

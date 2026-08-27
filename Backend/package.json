@@ -12,6 +12,10 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@langchain/community": "^1.1.29",
+    "@langchain/core": "^1.2.9",
+    "@mistralai/mistralai": "^2.6.4",
+    "@pinecone-database/pinecone": "^8.2.0",
     "bcryptjs": "^3.0.3",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
@@ -20,6 +24,7 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.6.2",
     "express-validator": "^7.3.2",
+    "groq-sdk": "^1.6.0",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.3",

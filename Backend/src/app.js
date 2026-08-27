@@ -7,8 +7,10 @@ import compression from "compression";
 import passport from "passport";
 
 import { configurePassport } from "./config/passport.js";
-import routes from "./routes/index.js";
 import errorHandler from "./middleware/errorHandler.js";
+
+import authRoutes from "./routes/auth.routes.js";
+import horoscopeRoutes from "./routes/horoscope.routes.js";
 
 const app = express();
 
@@ -30,7 +32,8 @@ configurePassport();
 app.use(passport.initialize());
 
 // Routes
-app.use("/api", routes);
+app.use("/api/auth", authRoutes);
+app.use("/api/horoscope", horoscopeRoutes);
 
 // 404
 app.use((req, res) =>
