@@ -42,6 +42,9 @@ if (!process.env.GROQ_API_KEY) {
 if (!process.env.MISTRAL_API_KEY) {
     throw new Error("MISTRAL_API_KEY is not defined");
 }
+if(!process.env.OPENCAGE_API_KEY){
+    throw new Error("OPENCAGE_API_KEY is not defined");
+}
 
 
 export const config = {
@@ -49,6 +52,7 @@ export const config = {
     Mongo_URI: process.env.MONGO_URI,
     MISTRAL_API: process.env.MISTRAL_API_KEY,
     GROQ_API_KEY: process.env.GROQ_API_KEY,
+    OPENCAGE_API_KEY: process.env.OPENCAGE_API_KEY,
     JWT_SECRET: process.env.JWT_SECRET,
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN,
     JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,

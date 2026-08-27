@@ -8,6 +8,7 @@ import passport from "passport";
 
 import { configurePassport } from "./config/passport.js";
 import errorHandler from "./middleware/errorHandler.js";
+import kundliRoutes from "./routes/kundli.routes.js";
 
 import authRoutes from "./routes/auth.routes.js";
 import horoscopeRoutes from "./routes/horoscope.routes.js";
@@ -34,6 +35,7 @@ app.use(passport.initialize());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/horoscope", horoscopeRoutes);
+app.use("/api/kundli", kundliRoutes);
 
 // 404
 app.use((req, res) =>
