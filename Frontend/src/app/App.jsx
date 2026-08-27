@@ -1,9 +1,19 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { RouterProvider } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { router } from "./App.routes";
+import { useDispatch } from "react-redux";
+import { getMe } from "../features/auth/state/auth.slice";
 
 const App = () => {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (localStorage.getItem("accessToken")) {
+      dispatch(getMe());
+    }
+  }, [dispatch]);
+
   return (
     <>
       {/* Global toast notifications */}

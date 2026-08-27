@@ -5,15 +5,16 @@ import BirthDetails from "../features/auth/pages/BirthDetails";
 import Login from "../features/auth/pages/Login";
 import VerifyEmail from "../features/auth/pages/VerifyEmail";
 import Subscription from "../features/auth/pages/Subscription";
+import Horoscope from "../features/horoscope/pages/Horoscope";
 
-/**
- * App Routes configured using createBrowserRouter
- * Registration flow: /register → /verify-email → /birth-details → /subscription
- */
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Navigate to="/register" replace />,
+    element: <Navigate to="/horoscope" replace />,
+  },
+  {
+    path: "/horoscope",
+    element: <Horoscope />,
   },
   {
     path: "/register",
@@ -37,7 +38,7 @@ const router = createBrowserRouter([
   },
   {
     path: "*",
-    element: <Navigate to="/register" replace />,
+    element: <Navigate to="/horoscope" replace />,
   },
 ]);
 
