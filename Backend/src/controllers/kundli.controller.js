@@ -1,4 +1,4 @@
-import Kundli from "../models/kundli.model.js";
+﻿import Kundli from "../models/kundli.model.js";
 import User from "../models/user.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import AppError from "../utils/AppError.js";
@@ -14,7 +14,7 @@ export const generate = asyncHandler(async (req, res) => {
         throw new AppError("name, birthDate, birthTime, birthPlace are required", 400);
     }
 
-    // Geocode birthPlace → lat, lng, timezone
+    // Geocode birthPlace -> lat, lng, timezone
     const geo = await geocodePlace(birthPlace);
 
     // Calculate planetary positions
@@ -113,8 +113,9 @@ export const getAIReading = asyncHandler(async (req, res) => {
 
     const lang = req.query.lang === "hi" ? "hi" : "en";
 
-    // Return cached reading only for English
-    if (lang === "en" && kundli.aiReading?.summary) {
+    // Return cached reading only when the stored language matches the requested language.
+    // This prevents a stale Hindi reading from being returned when English is requested (and vice versa).
+    if (kundli.aiReading?.summary && kundli.aiReading?.lang === lang) {
         return res.json({
             success: true,
             reading: kundli.aiReading,
@@ -124,8 +125,10 @@ export const getAIReading = asyncHandler(async (req, res) => {
 
     const reading = await generateAIReading(kundli, lang);
 
+    // Persist reading with its language tag so the cache check above works correctly
     kundli.aiReading = {
         ...reading,
+        lang,
         generatedAt: new Date(),
     };
 
