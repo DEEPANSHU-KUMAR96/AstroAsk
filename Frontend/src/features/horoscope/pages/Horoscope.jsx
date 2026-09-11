@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import useHoroscope from "../hooks/usehoroscope";
 import useAuth from "../../auth/hooks/useAuth";
+import Navbar from "../../../app/components/Navbar";
 
 const ZODIAC_SIGNS = [
     { id: "aries", name: "Aries", date: "MAR 21 - APR 19", element: "FIRE SIGN", color: "#E05A47", hex: "#E05A47" },
@@ -92,79 +93,7 @@ const Horoscope = () => {
     return (
         <div className="min-h-screen flex flex-col bg-[#fbf9f8] text-[#1b1c1c] font-['Inter',sans-serif] selection:bg-[#ffb800] selection:text-[#1a1a1a]">
             {/* Top Navigation */}
-            <nav className="bg-[#fdfcf9]/80 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-[rgba(26,26,26,0.1)] shadow-[0_20px_40px_rgba(0,0,0,0.04)] transition-all duration-500">
-                <div className="flex justify-between items-center max-w-360 mx-auto px-6 md:px-16 lg:px-24 py-5">
-                    <Link
-                        to="/horoscope"
-                        className="font-['Playfair_Display',Georgia,serif] text-2xl md:text-3xl font-semibold text-[#7c5800] tracking-tight hover:opacity-90 transition-opacity"
-                    >
-                        AstroAsk
-                    </Link>
-
-                    <div className="hidden md:flex gap-8 text-xs font-semibold uppercase tracking-[0.15em]">
-                        <Link
-                            to="/horoscope"
-                            className="text-[#7c5800] border-b-2 border-[#7c5800] pb-1 transition-colors"
-                        >
-                            Horoscopes
-                        </Link>
-                        <a
-                            href="#live-chat"
-                            className="text-[#5f5e5e] hover:text-[#7c5800] transition-colors"
-                        >
-                            Live Chat
-                        </a>
-                        <a
-                            href="#kundli"
-                            className="text-[#5f5e5e] hover:text-[#7c5800] transition-colors"
-                        >
-                            Kundli
-                        </a>
-                        <a
-                            href="#tarot"
-                            className="text-[#5f5e5e] hover:text-[#7c5800] transition-colors"
-                        >
-                            Tarot
-                        </a>
-                    </div>
-
-                    <div className="flex gap-3 text-xs font-semibold uppercase tracking-[0.15em] items-center">
-                        {isAuthenticated && user ? (
-                            <>
-                                <div className="hidden sm:flex items-center gap-2 text-[#5f5e5e] normal-case tracking-normal">
-                                    <div className="w-7 h-7 rounded-full bg-[#ffb800]/20 border border-[#ffb800]/40 flex items-center justify-center">
-                                        <User size={14} className="text-[#7c5800]" />
-                                    </div>
-                                    <span className="text-[#1a1a1a] font-medium text-sm">{user.name || user.email}</span>
-                                </div>
-                                <button
-                                    onClick={handleLogout}
-                                    className="flex items-center gap-1.5 text-[#5f5e5e] hover:text-[#7c5800] px-3 py-2 transition-colors"
-                                    title="Logout"
-                                >
-                                    <LogOut size={14} />
-                                    <span className="hidden sm:inline">Logout</span>
-                                </button>
-                            </>
-                        ) : (
-                            <>
-                                <Link
-                                    to="/login"
-                                    className="text-[#5f5e5e] hover:text-[#7c5800] px-3 py-2 transition-colors"
-                                >
-                                    Login
-                                </Link>
-                                <Link
-                                    to="/register"
-                                    className="bg-[#ffb800] text-[#6b4c00] px-5 md:px-6 py-2.5 rounded-full hover:bg-[#ffba20] transition-colors shadow-sm font-bold"
-                                >
-                                    Sign Up
-                                </Link>
-                            </>
-                        )}
-                    </div>
-                </div>
-            </nav>
+            <Navbar />
 
             {/* Main Content */}
             <main className="grow w-full max-w-360 mx-auto px-6 md:px-16 lg:px-24 pt-28 md:pt-32 pb-20">
@@ -192,8 +121,8 @@ const Horoscope = () => {
                                     key={s.id}
                                     onClick={() => changeSign(s.id)}
                                     className={`text-xs uppercase tracking-[0.15em] font-semibold pb-2 whitespace-nowrap transition-all duration-200 cursor-pointer ${isActive
-                                            ? "text-[#7c5800] border-b-2 border-[#7c5800] scale-105"
-                                            : "text-[#5f5e5e] hover:text-[#7c5800]"
+                                        ? "text-[#7c5800] border-b-2 border-[#7c5800] scale-105"
+                                        : "text-[#5f5e5e] hover:text-[#7c5800]"
                                         }`}
                                 >
                                     {s.name}
@@ -212,8 +141,8 @@ const Horoscope = () => {
                                         key={p.id}
                                         onClick={() => changePeriod(p.id)}
                                         className={`text-xs uppercase tracking-[0.15em] font-semibold px-5 py-2 rounded-full transition-all duration-200 cursor-pointer ${isActive
-                                                ? "bg-[#fdfcf9] shadow-sm text-[#7c5800]"
-                                                : "text-[#5f5e5e] hover:text-[#7c5800]"
+                                            ? "bg-[#fdfcf9] shadow-sm text-[#7c5800]"
+                                            : "text-[#5f5e5e] hover:text-[#7c5800]"
                                             }`}
                                     >
                                         {p.label}
@@ -227,8 +156,8 @@ const Horoscope = () => {
                             <button
                                 onClick={() => changeLang("en")}
                                 className={`cursor-pointer transition-colors ${selectedLang === "en"
-                                        ? "text-[#7c5800] font-bold"
-                                        : "text-[#5f5e5e] hover:text-[#7c5800]"
+                                    ? "text-[#7c5800] font-bold"
+                                    : "text-[#5f5e5e] hover:text-[#7c5800]"
                                     }`}
                             >
                                 EN
@@ -237,8 +166,8 @@ const Horoscope = () => {
                             <button
                                 onClick={() => changeLang("hi")}
                                 className={`cursor-pointer transition-colors ${selectedLang === "hi"
-                                        ? "text-[#7c5800] font-bold"
-                                        : "text-[#5f5e5e] hover:text-[#7c5800]"
+                                    ? "text-[#7c5800] font-bold"
+                                    : "text-[#5f5e5e] hover:text-[#7c5800]"
                                     }`}
                             >
                                 HI

@@ -5,7 +5,9 @@ import BirthDetails from "../features/auth/pages/BirthDetails";
 import Login from "../features/auth/pages/Login";
 import VerifyEmail from "../features/auth/pages/VerifyEmail";
 import Subscription from "../features/auth/pages/Subscription";
+import AuthCallback from "../features/auth/pages/AuthCallback";
 import Horoscope from "../features/horoscope/pages/Horoscope";
+import KundliPage from "../features/kundli/pages/Kundli";
 
 const router = createBrowserRouter([
   {
@@ -15,6 +17,18 @@ const router = createBrowserRouter([
   {
     path: "/horoscope",
     element: <Horoscope />,
+  },
+  {
+    path: "/kundli",
+    element: <KundliPage />,
+  },
+  {
+    path: "/kundli/:id",
+    element: <KundliPage />,
+  },
+  {
+    path: "/auth/callback",
+    element: <AuthCallback />,
   },
   {
     path: "/register",
@@ -37,6 +51,10 @@ const router = createBrowserRouter([
     element: <Subscription />,
   },
   {
+    path: "/dashboard",
+    element: <Navigate to="/horoscope" replace />,
+  },
+  {
     path: "*",
     element: <Navigate to="/horoscope" replace />,
   },
@@ -44,4 +62,3 @@ const router = createBrowserRouter([
 
 export { router };
 export default router;
-

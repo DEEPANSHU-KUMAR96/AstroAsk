@@ -4,14 +4,36 @@ import { Toaster } from "react-hot-toast";
 import { router } from "./App.routes";
 import { useDispatch } from "react-redux";
 import { getMe } from "../features/auth/state/auth.slice";
+import { refreshTokenApi } from "../features/auth/services/auth.api";
 
 const App = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    if (localStorage.getItem("accessToken")) {
-      dispatch(getMe());
-    }
+    const initializeAuth = async () => {
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        try {
+          await dispatch(getMe()).unwrap();
+          return;
+        } catch {
+          // Token might be expired, will attempt silent refresh below
+        }
+      }
+
+      // If no token or getMe failed, attempt silent refresh using the httpOnly cookie
+      try {
+        const { data } = await refreshTokenApi();
+        if (data?.accessToken) {
+          localStorage.setItem("accessToken", data.accessToken);
+          dispatch(getMe());
+        }
+      } catch {
+        // No active refresh session, user remains unauthenticated
+      }
+    };
+
+    initializeAuth();
   }, [dispatch]);
 
   return (
