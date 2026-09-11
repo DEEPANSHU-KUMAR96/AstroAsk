@@ -133,7 +133,7 @@ const PlanetRow = ({ planet }) => (
     </tr>
 );
 
-const ReadingSection = ({ reading, loading, onGenerate, lang, setLang }) => {
+const ReadingSection = ({ reading, loading, onGenerate, lang, setLang, onClearReading }) => {
     const hasReading = Boolean(reading?.summary);
 
     if (loading) {
@@ -204,6 +204,8 @@ const ReadingSection = ({ reading, loading, onGenerate, lang, setLang }) => {
                     <button
                         onClick={() => {
                             const newLang = lang === "en" ? "hi" : "en";
+                            // Clear stale reading first so the UI resets to the generate prompt
+                            onClearReading();
                             setLang(newLang);
                             onGenerate(newLang);
                         }}
@@ -417,7 +419,7 @@ const GenerateForm = ({ onSubmit, loading, user }) => {
     );
 };
 
-const KundliDetail = ({ kundli, reading, readingLoading, onGetReading, onDelete }) => {
+const KundliDetail = ({ kundli, reading, readingLoading, onGetReading, onDelete, onClearReading }) => {
     const [tab, setTab] = useState("chart");
     const [readingLang, setReadingLang] = useState("en");
 
@@ -601,11 +603,12 @@ const KundliDetail = ({ kundli, reading, readingLoading, onGetReading, onDelete 
 
                 {tab === "reading" && (
                     <ReadingSection
-                        reading={reading || kundli.aiReading}
+                        reading={reading}
                         loading={readingLoading}
                         lang={readingLang}
                         setLang={setReadingLang}
                         onGenerate={(selectedLang) => onGetReading(kundli._id, selectedLang)}
+                        onClearReading={onClearReading}
                     />
                 )}
             </div>
@@ -629,6 +632,7 @@ const KundliPage = () => {
         handleFetchOne,
         handleDelete,
         handleGetReading,
+        clearReading,
     } = useKundli();
 
     const [view, setView] = useState(id ? "detail" : "create");
@@ -755,6 +759,7 @@ const KundliPage = () => {
                         readingLoading={readingLoading}
                         onGetReading={handleGetReading}
                         onDelete={handleDelete}
+                        onClearReading={clearReading}
                     />
                 )}
 

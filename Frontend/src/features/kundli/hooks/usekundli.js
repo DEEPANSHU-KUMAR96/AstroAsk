@@ -9,6 +9,7 @@ import {
     fetchAIReading,
     clearSelected,
     clearError,
+    clearReading,
     selectKundlis,
     selectSelected,
     selectReading,
@@ -77,6 +78,8 @@ const useKundli = () => {
         handleGetReading,
         clearSelected: () => dispatch(clearSelected()),
         clearError: () => dispatch(clearError()),
+        // Clears current reading so language switching always fetches fresh
+        clearReading: () => dispatch(clearReading()),
     };
 };
 

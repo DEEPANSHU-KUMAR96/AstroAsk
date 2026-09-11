@@ -82,6 +82,12 @@ const kundliSlice = createSlice({
     reducers: {
         clearSelected: (state) => { state.selected = null; state.reading = null; },
         clearError: (state) => { state.error = null; },
+        // Clears the in-memory reading AND the cached aiReading on selected,
+        // so switching languages never shows stale content.
+        clearReading: (state) => {
+            state.reading = null;
+            if (state.selected) state.selected.aiReading = null;
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -121,7 +127,7 @@ const kundliSlice = createSlice({
     },
 });
 
-export const { clearSelected, clearError } = kundliSlice.actions;
+export const { clearSelected, clearError, clearReading } = kundliSlice.actions;
 
 export const selectKundlis = (state) => state.kundli.kundlis;
 export const selectSelected = (state) => state.kundli.selected;
