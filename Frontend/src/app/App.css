@@ -294,9 +294,12 @@ body {
 /* ─── Error / Success Toast override (react-hot-toast) ─────── */
 /* We use react-hot-toast so styles are auto-injected, nothing needed */
 
-/* ─── Scrollbar ────────────────────────────────────────────── */
+/* ─── Scrollbar — Premium Gold ─────────────────────────────── */
+
+/* Vertical page scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -304,8 +307,63 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(26, 26, 26, 0.15);
-  border-radius: 3px;
+  background: linear-gradient(180deg, #ffb800 0%, #c98a00 100%);
+  border-radius: 99px;
+  min-height: 40px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #ffca40 0%, #a87000 100%);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #ffb800 transparent;
+}
+
+/* ─── No-Scrollbar (for horizontal tab rails) ───────────────── */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── Scroll-Fade — uses CSS mask so content is never clipped ── */
+.scroll-fade-x {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 5%,
+    #000 95%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 5%,
+    #000 95%,
+    transparent 100%
+  );
+}
+
+/* ─── Horizontal scroll rail ────────────────────────────────── */
+.tab-rail {
+  display: flex;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+.tab-rail::-webkit-scrollbar {
+  display: none;
 }
 
 /* ─── Selection ────────────────────────────────────────────── */

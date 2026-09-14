@@ -502,14 +502,14 @@ const KundliDetail = ({ kundli, reading, readingLoading, onGetReading, onDelete,
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex gap-2 overflow-x-auto pb-1 border-b border-[rgba(26,26,26,0.08)]">
+            <div className="tab-rail no-scrollbar scroll-fade-x border-b border-[rgba(26,26,26,0.08)] gap-1 px-1">
                 {tabs.map((t) => (
                     <button
                         key={t.key}
                         onClick={() => setTab(t.key)}
-                        className={`flex items-center gap-1.5 py-2.5 px-4 text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer rounded-t-xl ${
+                        className={`flex items-center gap-1.5 py-2.5 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer rounded-t-xl flex-shrink-0 ${
                             tab === t.key
-                                ? "bg-white text-[#7c5800] border-t-2 border-[#7c5800] shadow-sm"
+                                ? "bg-white text-[#7c5800] border-t-2 border-[#ffb800] shadow-sm"
                                 : "text-[#5f5e5e] hover:text-[#7c5800]"
                         }`}
                     >
@@ -661,7 +661,7 @@ const KundliPage = () => {
         <div className="min-h-screen flex flex-col bg-[#fbf9f8] text-[#1b1c1c] font-['Inter',sans-serif]">
             <Navbar />
 
-            <main className="grow w-full max-w-5xl mx-auto px-6 md:px-12 pt-28 pb-20">
+            <main className="grow w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-10 pt-24 md:pt-28 pb-20">
                 {/* Unauthenticated notice */}
                 {!isAuthenticated && (
                     <div className="mb-8 p-6 bg-[#fff9ed] border border-[#ffb800]/40 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
