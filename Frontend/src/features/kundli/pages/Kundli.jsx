@@ -19,85 +19,447 @@ import Navbar from "../../../app/components/Navbar";
 import useKundli from "../hooks/useKundli";
 import useAuth from "../../auth/hooks/useAuth";
 
-// North Indian Vedic Chart representation
-const VedicChart = ({ houses = [], planets = [] }) => {
-    // Map planets by house
+// ─── Vedic Astrology Constants & Metadata ──────────────────────────────────────
+const ZODIAC_SIGNS = {
+    Aries: { num: 1, short: "Ari", sanskrit: "Mesha", lord: "Mars" },
+    Taurus: { num: 2, short: "Tau", sanskrit: "Vrishabha", lord: "Venus" },
+    Gemini: { num: 3, short: "Gem", sanskrit: "Mithuna", lord: "Mercury" },
+    Cancer: { num: 4, short: "Can", sanskrit: "Karka", lord: "Moon" },
+    Leo: { num: 5, short: "Leo", sanskrit: "Simha", lord: "Sun" },
+    Virgo: { num: 6, short: "Vir", sanskrit: "Kanya", lord: "Mercury" },
+    Libra: { num: 7, short: "Lib", sanskrit: "Tula", lord: "Venus" },
+    Scorpio: { num: 8, short: "Sco", sanskrit: "Vrischika", lord: "Mars" },
+    Sagittarius: { num: 9, short: "Sag", sanskrit: "Dhanu", lord: "Jupiter" },
+    Capricorn: { num: 10, short: "Cap", sanskrit: "Makara", lord: "Saturn" },
+    Aquarius: { num: 11, short: "Aqu", sanskrit: "Kumbha", lord: "Saturn" },
+    Pisces: { num: 12, short: "Pis", sanskrit: "Meena", lord: "Jupiter" },
+};
+
+const getSignInfo = (signName) => {
+    if (!signName) return { short: "", num: "", sanskrit: "", lord: "" };
+    const normalized = signName.trim().toLowerCase();
+    const matchKey = Object.keys(ZODIAC_SIGNS).find(
+        (k) => k.toLowerCase() === normalized || normalized.startsWith(k.toLowerCase().slice(0, 3))
+    );
+    return matchKey ? ZODIAC_SIGNS[matchKey] : { short: signName.slice(0, 3), num: "", sanskrit: "", lord: "" };
+};
+
+const HOUSE_INFO = {
+    1: { name: "1st House (Lagna)", sanskrit: "Tanu Bhava", meaning: "Self, Physical Constitution, Vitality, Personality & Soul Purpose" },
+    2: { name: "2nd House", sanskrit: "Dhana Bhava", meaning: "Wealth, Accumulated Assets, Family Values, Speech & Food" },
+    3: { name: "3rd House", sanskrit: "Sahaja Bhava", meaning: "Courage, Willpower, Younger Siblings, Communication & Manual Skills" },
+    4: { name: "4th House", sanskrit: "Sukha Bhava", meaning: "Mother, Inner Peace, Home Sanctuary, Vehicles & Ancestral Roots" },
+    5: { name: "5th House", sanskrit: "Putra Bhava", meaning: "Higher Intellect, Past-Life Karma (Purva Punya), Children & Creative Expression" },
+    6: { name: "6th House", sanskrit: "Shatru Bhava", meaning: "Overcoming Adversity, Daily Service, Healing, Debts & Competition" },
+    7: { name: "7th House", sanskrit: "Kalatra Bhava", meaning: "Life Partner, Marriage, Business Collaborations & Public Relations" },
+    8: { name: "8th House", sanskrit: "Randhra Bhava", meaning: "Longevity, Mysticism, Kundalini, Sudden Transformations & Inheritance" },
+    9: { name: "9th House", sanskrit: "Bhagya Bhava", meaning: "Divine Fortune, Dharma, Higher Philosophy, Guru & Spiritual Pilgrimages" },
+    10: { name: "10th House", sanskrit: "Karma Bhava", meaning: "Career, Leadership, Social Prestige, Legacy & Public Actions" },
+    11: { name: "11th House", sanskrit: "Labha Bhava", meaning: "Gains, Fulfillment of Desires, Wealth Inflow, Social Circles & Elders" },
+    12: { name: "12th House", sanskrit: "Vyaya Bhava", meaning: "Spiritual Liberation (Moksha), Meditation, Foreign Lands & Inner Solitude" },
+};
+
+const PLANET_NAMES = {
+    short: {
+        Sun: "Su",
+        Moon: "Mo",
+        Mars: "Ma",
+        Mercury: "Me",
+        Jupiter: "Ju",
+        Venus: "Ve",
+        Saturn: "Sa",
+        Rahu: "Ra",
+        Ketu: "Ke",
+        Uranus: "Ur",
+        Neptune: "Ne",
+        Pluto: "Pl",
+        Ascendant: "Asc",
+    },
+    standard: {
+        Sun: "Sun",
+        Moon: "Moon",
+        Mars: "Mars",
+        Mercury: "Merc",
+        Jupiter: "Jup",
+        Venus: "Ven",
+        Saturn: "Sat",
+        Rahu: "Rahu",
+        Ketu: "Ketu",
+        Uranus: "Uran",
+        Neptune: "Nept",
+        Pluto: "Plut",
+        Ascendant: "Asc",
+    },
+    full: {
+        Sun: "Sun",
+        Moon: "Moon",
+        Mars: "Mars",
+        Mercury: "Mercury",
+        Jupiter: "Jupiter",
+        Venus: "Venus",
+        Saturn: "Saturn",
+        Rahu: "Rahu",
+        Ketu: "Ketu",
+        Uranus: "Uranus",
+        Neptune: "Neptune",
+        Pluto: "Pluto",
+        Ascendant: "Ascendant",
+    },
+};
+
+const PLANET_SHORT = PLANET_NAMES.short;
+
+// 12 Bhavas defined on standard 400x400 North Indian Kundli geometry:
+// - Outer square: 0,0 to 400,400
+// - Diagonals: (0,0)-(400,400) and (400,0)-(0,400)
+// - Central Diamond: (200,0)-(400,200)-(200,400)-(0,200)
+// - Coordinates are mathematically centered to guarantee zero text collision with diagonals or edges.
+const HOUSE_DEFINITIONS = [
+    {
+        house: 1,
+        points: "200,0 300,100 200,200 100,100",
+        labelX: 200,
+        labelY: 30,
+        cx: 200,
+        cy: 105,
+        isDiamond: true,
+    },
+    {
+        house: 2,
+        points: "0,0 200,0 100,100",
+        labelX: 65,
+        labelY: 22,
+        cx: 100,
+        cy: 55,
+        isDiamond: false,
+    },
+    {
+        house: 3,
+        points: "0,0 100,100 0,200",
+        labelX: 22,
+        labelY: 48,
+        cx: 48,
+        cy: 100,
+        isDiamond: false,
+    },
+    {
+        house: 4,
+        points: "0,200 100,100 200,200 100,300",
+        labelX: 100,
+        labelY: 130,
+        cx: 100,
+        cy: 200,
+        isDiamond: true,
+    },
+    {
+        house: 5,
+        points: "0,200 100,300 0,400",
+        labelX: 22,
+        labelY: 352,
+        cx: 48,
+        cy: 300,
+        isDiamond: false,
+    },
+    {
+        house: 6,
+        points: "0,400 100,300 200,400",
+        labelX: 65,
+        labelY: 378,
+        cx: 100,
+        cy: 345,
+        isDiamond: false,
+    },
+    {
+        house: 7,
+        points: "100,300 200,200 300,300 200,400",
+        labelX: 200,
+        labelY: 370,
+        cx: 200,
+        cy: 295,
+        isDiamond: true,
+    },
+    {
+        house: 8,
+        points: "200,400 300,300 400,400",
+        labelX: 335,
+        labelY: 378,
+        cx: 300,
+        cy: 345,
+        isDiamond: false,
+    },
+    {
+        house: 9,
+        points: "400,200 300,300 400,400",
+        labelX: 378,
+        labelY: 352,
+        cx: 352,
+        cy: 300,
+        isDiamond: false,
+    },
+    {
+        house: 10,
+        points: "200,200 300,100 400,200 300,300",
+        labelX: 300,
+        labelY: 130,
+        cx: 300,
+        cy: 200,
+        isDiamond: true,
+    },
+    {
+        house: 11,
+        points: "400,0 400,200 300,100",
+        labelX: 378,
+        labelY: 48,
+        cx: 352,
+        cy: 100,
+        isDiamond: false,
+    },
+    {
+        house: 12,
+        points: "200,0 400,0 300,100",
+        labelX: 335,
+        labelY: 22,
+        cx: 300,
+        cy: 55,
+        isDiamond: false,
+    },
+];
+
+// Helper to compute responsive planet positions without overlapping borders or sign tags
+const getPlanetLayout = (plList, cx, cy, isDiamond, displayMode = "standard") => {
+    const count = plList.length;
+    if (count === 0) return [];
+
+    let fontSize = 11;
+    let spacing = 13.5;
+
+    if (count === 2) {
+        fontSize = 10;
+        spacing = 13;
+    } else if (count === 3) {
+        fontSize = 9;
+        spacing = 11.5;
+    } else if (count >= 4) {
+        fontSize = 8;
+        spacing = 10;
+    }
+
+    const startY = cy - ((count - 1) / 2) * spacing;
+    const nameMap = PLANET_NAMES[displayMode] || PLANET_NAMES.standard;
+
+    return plList.map((p, idx) => {
+        let displayName = nameMap[p.cleanName] || p.cleanName;
+        if (count >= 3 && displayName.length > 5) {
+            displayName = PLANET_NAMES.standard[p.cleanName] || displayName.slice(0, 4);
+        }
+
+        return {
+            ...p,
+            displayName,
+            x: cx,
+            y: startY + idx * spacing,
+            fontSize,
+        };
+    });
+};
+
+// North Indian Vedic Kundli Chart
+const VedicChart = ({
+    houses = [],
+    planets = [],
+    selectedHouse: externalSelected,
+    onSelectHouse: externalOnSelect,
+}) => {
+    const [internalSelected, setInternalSelected] = useState(1);
+    const [hoveredHouse, setHoveredHouse] = useState(null);
+    const [displayMode, setDisplayMode] = useState("standard"); // "standard" | "short" | "full"
+
+    const selectedHouse = externalSelected !== undefined ? externalSelected : internalSelected;
+    const handleSelectHouse = (h) => {
+        if (externalOnSelect) {
+            externalOnSelect(h);
+        } else {
+            setInternalSelected(h);
+        }
+    };
+
+    // Group planets by house and normalize retrograde status
     const planetsByHouse = {};
     planets.forEach((p) => {
-        const h = p.house;
+        const h = Number(p.house);
         if (!planetsByHouse[h]) planetsByHouse[h] = [];
-        planetsByHouse[h].push(p.name + (p.isRetro ? "(R)" : ""));
+        const cleanName = (p.name || "").replace(/\(R\)/gi, "").trim();
+        const isRetro = Boolean(p.isRetro || (p.name && p.name.includes("(R)")));
+        planetsByHouse[h].push({
+            ...p,
+            cleanName,
+            isRetro,
+        });
     });
 
-    const housePositions = [
-        { house: 1, x: 200, y: 105, labelX: 200, labelY: 60 },
-        { house: 2, x: 105, y: 55, labelX: 105, labelY: 30 },
-        { house: 3, x: 55, y: 105, labelX: 30, labelY: 105 },
-        { house: 4, x: 105, y: 200, labelX: 60, labelY: 200 },
-        { house: 5, x: 55, y: 295, labelX: 30, labelY: 295 },
-        { house: 6, x: 105, y: 345, labelX: 105, labelY: 370 },
-        { house: 7, x: 200, y: 295, labelX: 200, labelY: 340 },
-        { house: 8, x: 295, y: 345, labelX: 295, labelY: 370 },
-        { house: 9, x: 345, y: 295, labelX: 370, labelY: 295 },
-        { house: 10, x: 295, y: 200, labelX: 340, labelY: 200 },
-        { house: 11, x: 345, y: 105, labelX: 370, labelY: 105 },
-        { house: 12, x: 295, y: 55, labelX: 295, labelY: 30 },
-    ];
-
     return (
-        <div className="flex flex-col items-center justify-center p-4">
-            <div className="relative w-full max-w-[420px] aspect-square">
-                <svg viewBox="0 0 400 400" className="w-full h-full drop-shadow-md">
-                    {/* Outer background */}
-                    <rect x="0" y="0" width="400" height="400" fill="#fdfcf9" stroke="#7c5800" strokeWidth="2.5" />
+        <div className="w-full flex flex-col items-center">
+            {/* Chart Toolbar */}
+            <div className="w-full flex flex-wrap items-center justify-between gap-2 mb-3 px-1">
+                <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-[#7c5800] uppercase tracking-wider">
+                        Labels:
+                    </span>
+                    <div className="inline-flex rounded-lg p-0.5 bg-[#f4ece1] border border-[rgba(124,88,0,0.15)] text-[11px] font-semibold">
+                        <button
+                            type="button"
+                            onClick={() => setDisplayMode("standard")}
+                            className={`px-2.5 py-1 rounded-md transition cursor-pointer ${displayMode === "standard"
+                                ? "bg-white text-[#7c5800] shadow-xs font-bold"
+                                : "text-[#5f5e5e] hover:text-[#7c5800]"
+                                }`}
+                        >
+                            Standard
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setDisplayMode("short")}
+                            className={`px-2.5 py-1 rounded-md transition cursor-pointer ${displayMode === "short"
+                                ? "bg-white text-[#7c5800] shadow-xs font-bold"
+                                : "text-[#5f5e5e] hover:text-[#7c5800]"
+                                }`}
+                        >
+                            Vedic (Su, Mo)
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setDisplayMode("full")}
+                            className={`px-2.5 py-1 rounded-md transition cursor-pointer ${displayMode === "full"
+                                ? "bg-white text-[#7c5800] shadow-xs font-bold"
+                                : "text-[#5f5e5e] hover:text-[#7c5800]"
+                                }`}
+                        >
+                            Full
+                        </button>
+                    </div>
+                </div>
 
-                    {/* Diagonals */}
-                    <line x1="0" y1="0" x2="400" y2="400" stroke="#7c5800" strokeWidth="1.5" />
-                    <line x1="400" y1="0" x2="0" y2="400" stroke="#7c5800" strokeWidth="1.5" />
+                <div className="text-[11px] text-[#5f5e5e] flex items-center gap-1.5">
+                    <span className="inline-block w-2 h-2 rounded-full bg-[#ffb800] animate-pulse" />
+                    <span>Tap house to inspect</span>
+                </div>
+            </div>
 
-                    {/* Central Diamond */}
-                    <polygon points="200,0 400,200 200,400 0,200" fill="none" stroke="#7c5800" strokeWidth="1.5" />
+            {/* Responsive Chart Container with fluid aspect ratio */}
+            <div className="relative w-full max-w-[440px] sm:max-w-[470px] aspect-square mx-auto p-1 bg-[#fdfcf9] rounded-2xl shadow-sm border border-[rgba(124,88,0,0.25)]">
+                <svg
+                    viewBox="0 0 400 400"
+                    className="w-full h-full select-none overflow-visible"
+                >
+                    {/* Base Background */}
+                    <rect x="0" y="0" width="400" height="400" fill="#fdfcf9" />
 
-                    {/* Render House sign numbers and planets */}
-                    {housePositions.map(({ house, x, y, labelX, labelY }) => {
-                        const houseData = houses.find((h) => h.house === house);
-                        const plList = planetsByHouse[house] || [];
+                    {/* Interactive House Polygons */}
+                    {HOUSE_DEFINITIONS.map(({ house, points }) => {
+                        const isSelected = selectedHouse === house;
+                        const isHovered = hoveredHouse === house;
 
                         return (
-                            <g key={house}>
-                                {/* House Sign Name */}
-                                <text
-                                    x={labelX}
-                                    y={labelY}
-                                    textAnchor="middle"
-                                    dominantBaseline="central"
-                                    className="fill-[#7c5800] text-[10px] font-bold tracking-tight"
-                                >
-                                    {houseData?.sign ? houseData.sign.slice(0, 3) : `H${house}`}
-                                </text>
+                            <polygon
+                                key={house}
+                                points={points}
+                                className="cursor-pointer transition-all duration-150"
+                                fill={
+                                    isSelected
+                                        ? "#ffb800"
+                                        : isHovered
+                                            ? "#ffb800"
+                                            : "#fdfcf9"
+                                }
+                                fillOpacity={isSelected ? 0.24 : isHovered ? 0.12 : 1}
+                                stroke={isSelected ? "#7c5800" : "transparent"}
+                                strokeWidth={isSelected ? 2 : 0}
+                                onClick={() => handleSelectHouse(house)}
+                                onMouseEnter={() => setHoveredHouse(house)}
+                                onMouseLeave={() => setHoveredHouse(null)}
+                            />
+                        );
+                    })}
 
-                                {/* House number indicator (subtle) */}
-                                <text
-                                    x={labelX}
-                                    y={labelY + 12}
-                                    textAnchor="middle"
-                                    dominantBaseline="central"
-                                    className="fill-[rgba(124,88,0,0.4)] text-[8px]"
-                                >
-                                    ({house})
-                                </text>
+                    {/* Chart Structural Lines (pointer-events-none so polygons receive clicks) */}
+                    <line x1="0" y1="0" x2="400" y2="400" stroke="#7c5800" strokeWidth="1.75" pointerEvents="none" />
+                    <line x1="400" y1="0" x2="0" y2="400" stroke="#7c5800" strokeWidth="1.75" pointerEvents="none" />
+                    <polygon
+                        points="200,0 400,200 200,400 0,200"
+                        fill="none"
+                        stroke="#7c5800"
+                        strokeWidth="1.75"
+                        pointerEvents="none"
+                    />
+                    <rect
+                        x="0"
+                        y="0"
+                        width="400"
+                        height="400"
+                        fill="none"
+                        stroke="#7c5800"
+                        strokeWidth="3"
+                        pointerEvents="none"
+                    />
 
-                                {/* Occupying Planets */}
-                                {plList.map((pl, idx) => (
+                    {/* House Content: Zodiac Sign Badges & Occupying Planets */}
+                    {HOUSE_DEFINITIONS.map(({ house, labelX, labelY, cx, cy, isDiamond }) => {
+                        const houseData = houses.find((h) => Number(h.house) === house);
+                        const signInfo = getSignInfo(houseData?.sign);
+                        const plList = planetsByHouse[house] || [];
+                        const formattedPlanets = getPlanetLayout(plList, cx, cy, isDiamond, displayMode);
+                        const isSelected = selectedHouse === house;
+
+                        return (
+                            <g
+                                key={house}
+                                className="cursor-pointer"
+                                onClick={() => handleSelectHouse(house)}
+                            >
+                                {/* Zodiac Sign Badge */}
+                                <g className="select-none pointer-events-none">
                                     <text
-                                        key={idx}
-                                        x={x}
-                                        y={y + (idx - (plList.length - 1) / 2) * 13}
+                                        x={labelX}
+                                        y={labelY - 5}
                                         textAnchor="middle"
                                         dominantBaseline="central"
-                                        className="fill-[#1a1a1a] text-[11px] font-semibold"
+                                        className={`font-bold tracking-tight text-[8.5px] transition-colors ${isSelected ? "fill-[#5c3e00]" : "fill-[#7c5800]"
+                                            }`}
                                     >
-                                        {pl}
+                                        {signInfo.short || (houseData?.sign ? houseData.sign.slice(0, 3) : `H${house}`)}
+                                    </text>
+                                    <text
+                                        x={labelX}
+                                        y={labelY + 5}
+                                        textAnchor="middle"
+                                        dominantBaseline="central"
+                                        className="fill-[#9e7616] text-[7.5px] font-bold"
+                                    >
+                                        {signInfo.num ? `${signInfo.num}` : `${house}`}
+                                    </text>
+                                </g>
+
+                                {/* Occupying Planets with Dynamic Spacing & Superscript Retrograde */}
+                                {formattedPlanets.map((p, idx) => (
+                                    <text
+                                        key={`${p.cleanName}-${idx}`}
+                                        x={p.x}
+                                        y={p.y}
+                                        textAnchor="middle"
+                                        dominantBaseline="central"
+                                        className="fill-[#1a1a1a] font-bold select-none pointer-events-none"
+                                        style={{ fontSize: `${p.fontSize}px` }}
+                                    >
+                                        {p.displayName}
+                                        {p.isRetro && (
+                                            <tspan
+                                                dx="1"
+                                                dy="-2"
+                                                className="fill-[#dc2626] font-black text-[7.5px]"
+                                            >
+                                                ᴿ
+                                            </tspan>
+                                        )}
                                     </text>
                                 ))}
                             </g>
@@ -105,9 +467,165 @@ const VedicChart = ({ houses = [], planets = [] }) => {
                     })}
                 </svg>
             </div>
-            <p className="text-xs text-[#5f5e5e] mt-3 tracking-wide">
-                Classic North Indian Lagna Kundli • House 1 at Top Center Diamond
+
+            <p className="text-[11px] sm:text-xs text-[#5f5e5e] text-center mt-3 tracking-wide">
+                Classic North Indian Lagna Kundli • Top Diamond = House 1 (Lagna) • Anti-clockwise sequence
             </p>
+        </div>
+    );
+};
+
+// Interactive Companion House Inspector Panel
+const HouseInspector = ({ houseNum, houses = [], planets = [], onSelectHouse }) => {
+    const houseObj = houses.find((h) => Number(h.house) === Number(houseNum)) || {};
+    const signInfo = getSignInfo(houseObj.sign);
+    const houseInfo = HOUSE_INFO[houseNum] || {
+        name: `House ${houseNum}`,
+        sanskrit: "",
+        meaning: "",
+    };
+    const housePlanets = planets.filter((p) => Number(p.house) === Number(houseNum));
+
+    return (
+        <div className="bg-[#fcfaf7] border border-[#ffb800]/40 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-4">
+            {/* Quick House Navigation Tabs */}
+            <div>
+                <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c5800]">
+                        House Navigator
+                    </span>
+                    <span className="text-[10px] text-[#5f5e5e]">
+                        Dots indicate planets
+                    </span>
+                </div>
+                <div className="grid grid-cols-6 sm:grid-cols-6 gap-1.5">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => {
+                        const isSelected = Number(houseNum) === num;
+                        const hasPlanets = planets.some((p) => Number(p.house) === num);
+                        return (
+                            <button
+                                key={num}
+                                type="button"
+                                onClick={() => onSelectHouse(num)}
+                                className={`relative py-1.5 px-1 rounded-lg text-xs font-bold transition cursor-pointer text-center ${isSelected
+                                    ? "bg-[#7c5800] text-white shadow-xs"
+                                    : "bg-white text-[#5f5e5e] hover:bg-[#fff9ed] hover:text-[#7c5800] border border-[rgba(26,26,26,0.08)]"
+                                    }`}
+                            >
+                                H{num}
+                                {hasPlanets && (
+                                    <span
+                                        className={`absolute top-1 right-1 w-1.5 h-1.5 rounded-full ${isSelected ? "bg-[#ffb800]" : "bg-[#7c5800]"
+                                            }`}
+                                    />
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Selected House Details Card */}
+            <div className="bg-white rounded-xl p-4 border border-[rgba(26,26,26,0.08)] shadow-xs">
+                <div className="flex items-start justify-between gap-2">
+                    <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs font-bold uppercase tracking-wider bg-[#fff9ed] text-[#7c5800] px-2.5 py-0.5 rounded-full border border-[#ffb800]/30">
+                                House {houseNum} {houseNum === 1 ? "• Lagna" : ""}
+                            </span>
+                            {houseInfo.sanskrit && (
+                                <span className="text-xs font-medium text-[#5f5e5e]">
+                                    ({houseInfo.sanskrit})
+                                </span>
+                            )}
+                        </div>
+                        <h4 className="font-['Playfair_Display',Georgia,serif] text-xl font-bold text-[#1a1a1a] mt-1.5">
+                            {houseObj.sign || "—"}{" "}
+                            <span className="text-sm font-normal text-[#5f5e5e]">
+                                {signInfo.sanskrit ? `(${signInfo.sanskrit})` : ""}
+                            </span>
+                        </h4>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                        <span className="text-xs font-bold text-[#7c5800] block">
+                            Rashi #{signInfo.num || houseNum}
+                        </span>
+                        {signInfo.lord && (
+                            <span className="text-[11px] text-[#5f5e5e] block">
+                                Lord: <strong className="text-[#1a1a1a]">{signInfo.lord}</strong>
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                <p className="text-xs text-[#5f5e5e] mt-2.5 pt-2.5 border-t border-[rgba(26,26,26,0.06)] leading-relaxed">
+                    <strong className="text-[#7c5800]">Signifies:</strong> {houseInfo.meaning}
+                </p>
+                {houseObj.degree && (
+                    <p className="text-[11px] text-[#5f5e5e] mt-1 font-mono">
+                        House Cusp: {houseObj.degree.toFixed(2)}°
+                    </p>
+                )}
+            </div>
+
+            {/* Occupying Planets */}
+            <div>
+                <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#7c5800] flex items-center gap-1.5">
+                        <span>🪐</span> Occupying Planets ({housePlanets.length})
+                    </span>
+                    {housePlanets.length > 0 && (
+                        <span className="text-[10px] text-[#5f5e5e]">
+                            Exact degrees & nakshatra
+                        </span>
+                    )}
+                </div>
+
+                {housePlanets.length === 0 ? (
+                    <div className="bg-white/80 rounded-xl p-4 text-center border border-dashed border-[rgba(26,26,26,0.15)] text-xs text-[#5f5e5e]">
+                        No planets directly occupying this house.
+                        <p className="text-[10px] text-[#8c8985] mt-0.5">
+                            House results are channeled through House Lord ({signInfo.lord || "Ruler"}) and planetary aspects.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="space-y-2">
+                        {housePlanets.map((p, i) => (
+                            <div
+                                key={i}
+                                className="bg-white rounded-xl p-3 border border-[rgba(26,26,26,0.08)] flex items-center justify-between gap-3 shadow-xs hover:border-[#ffb800]/50 transition"
+                            >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-8 h-8 rounded-full bg-[#fff9ed] border border-[#ffb800]/40 flex items-center justify-center font-bold text-xs text-[#7c5800] flex-shrink-0">
+                                        {PLANET_SHORT[p.name.replace(/\(R\)/g, "").trim()] || p.name.slice(0, 2)}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="font-bold text-sm text-[#1a1a1a] truncate">
+                                                {p.name.replace(/\(R\)/g, "").trim()}
+                                            </span>
+                                            {(p.isRetro || p.name.includes("(R)")) && (
+                                                <span className="text-[9px] bg-red-100 text-red-700 px-1.5 py-0.2 rounded font-bold flex-shrink-0">
+                                                    Retrograde
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-[11px] text-[#5f5e5e] truncate">
+                                            {p.nakshatra ? `Nakshatra: ${p.nakshatra}` : `Zodiac: ${p.sign}`}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="text-right flex-shrink-0">
+                                    <span className="text-xs font-mono font-semibold text-[#7c5800] bg-[#fcfaf7] px-2 py-0.5 rounded border border-[#f4ece1]">
+                                        {p.degree ? `${p.degree.toFixed(2)}°` : "—"}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
@@ -164,18 +682,16 @@ const ReadingSection = ({ reading, loading, onGenerate, lang, setLang, onClearRe
                     <button
                         type="button"
                         onClick={() => setLang("en")}
-                        className={`px-3 py-1 text-xs rounded-full font-medium transition cursor-pointer ${
-                            lang === "en" ? "bg-[#7c5800] text-white" : "bg-[#f4ece1] text-[#5f5e5e]"
-                        }`}
+                        className={`px-3 py-1 text-xs rounded-full font-medium transition cursor-pointer ${lang === "en" ? "bg-[#7c5800] text-white" : "bg-[#f4ece1] text-[#5f5e5e]"
+                            }`}
                     >
                         English
                     </button>
                     <button
                         type="button"
                         onClick={() => setLang("hi")}
-                        className={`px-3 py-1 text-xs rounded-full font-medium transition cursor-pointer ${
-                            lang === "hi" ? "bg-[#7c5800] text-white" : "bg-[#f4ece1] text-[#5f5e5e]"
-                        }`}
+                        className={`px-3 py-1 text-xs rounded-full font-medium transition cursor-pointer ${lang === "hi" ? "bg-[#7c5800] text-white" : "bg-[#f4ece1] text-[#5f5e5e]"
+                            }`}
                     >
                         हिंदी (Hindi)
                     </button>
@@ -422,6 +938,7 @@ const GenerateForm = ({ onSubmit, loading, user }) => {
 const KundliDetail = ({ kundli, reading, readingLoading, onGetReading, onDelete, onClearReading }) => {
     const [tab, setTab] = useState("chart");
     const [readingLang, setReadingLang] = useState("en");
+    const [selectedHouse, setSelectedHouse] = useState(1);
 
     const tabs = [
         { key: "chart", label: "Lagna Chart", icon: "🏛️" },
@@ -507,11 +1024,10 @@ const KundliDetail = ({ kundli, reading, readingLoading, onGetReading, onDelete,
                     <button
                         key={t.key}
                         onClick={() => setTab(t.key)}
-                        className={`flex items-center gap-1.5 py-2.5 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer rounded-t-xl flex-shrink-0 ${
-                            tab === t.key
-                                ? "bg-white text-[#7c5800] border-t-2 border-[#ffb800] shadow-sm"
-                                : "text-[#5f5e5e] hover:text-[#7c5800]"
-                        }`}
+                        className={`flex items-center gap-1.5 py-2.5 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer rounded-t-xl flex-shrink-0 ${tab === t.key
+                            ? "bg-white text-[#7c5800] border-t-2 border-[#ffb800] shadow-sm"
+                            : "text-[#5f5e5e] hover:text-[#7c5800]"
+                            }`}
                     >
                         <span>{t.icon}</span>
                         {t.label}
@@ -520,9 +1036,26 @@ const KundliDetail = ({ kundli, reading, readingLoading, onGetReading, onDelete,
             </div>
 
             {/* Tab Panes */}
-            <div className="bg-white rounded-2xl p-6 border border-[rgba(26,26,26,0.08)] shadow-sm">
+            <div className="bg-white rounded-2xl p-4 sm:p-6 border border-[rgba(26,26,26,0.08)] shadow-sm">
                 {tab === "chart" && (
-                    <VedicChart houses={kundli.houses} planets={kundli.planets} />
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                        <div className="lg:col-span-7 flex flex-col items-center">
+                            <VedicChart
+                                houses={kundli.houses}
+                                planets={kundli.planets}
+                                selectedHouse={selectedHouse}
+                                onSelectHouse={setSelectedHouse}
+                            />
+                        </div>
+                        <div className="lg:col-span-5 w-full">
+                            <HouseInspector
+                                houseNum={selectedHouse}
+                                houses={kundli.houses}
+                                planets={kundli.planets}
+                                onSelectHouse={setSelectedHouse}
+                            />
+                        </div>
+                    </div>
                 )}
 
                 {tab === "planets" && (
@@ -579,11 +1112,10 @@ const KundliDetail = ({ kundli, reading, readingLoading, onGetReading, onDelete,
                             return (
                                 <div
                                     key={i}
-                                    className={`flex justify-between items-center p-3.5 rounded-xl transition ${
-                                        isCurrent
-                                            ? "bg-[#fff9ed] border-2 border-[#ffb800] shadow-sm"
-                                            : "bg-[#fcfaf7] border border-[#f4ece1]"
-                                    }`}
+                                    className={`flex justify-between items-center p-3.5 rounded-xl transition ${isCurrent
+                                        ? "bg-[#fff9ed] border-2 border-[#ffb800] shadow-sm"
+                                        : "bg-[#fcfaf7] border border-[#f4ece1]"
+                                        }`}
                                 >
                                     <div className="flex items-center gap-3">
                                         {isCurrent && <span className="w-2.5 h-2.5 bg-[#ffb800] rounded-full animate-ping" />}
@@ -716,21 +1248,19 @@ const KundliPage = () => {
                             <div className="flex bg-[#f4ece1]/70 p-1 rounded-full border border-[rgba(124,88,0,0.15)] text-xs font-semibold">
                                 <button
                                     onClick={() => setView("create")}
-                                    className={`px-4 py-1.5 rounded-full transition cursor-pointer ${
-                                        view === "create"
-                                            ? "bg-[#7c5800] text-white shadow-sm"
-                                            : "text-[#5f5e5e] hover:text-[#7c5800]"
-                                    }`}
+                                    className={`px-4 py-1.5 rounded-full transition cursor-pointer ${view === "create"
+                                        ? "bg-[#7c5800] text-white shadow-sm"
+                                        : "text-[#5f5e5e] hover:text-[#7c5800]"
+                                        }`}
                                 >
                                     + New Kundli
                                 </button>
                                 <button
                                     onClick={() => setView("list")}
-                                    className={`px-4 py-1.5 rounded-full transition cursor-pointer ${
-                                        view === "list"
-                                            ? "bg-[#7c5800] text-white shadow-sm"
-                                            : "text-[#5f5e5e] hover:text-[#7c5800]"
-                                    }`}
+                                    className={`px-4 py-1.5 rounded-full transition cursor-pointer ${view === "list"
+                                        ? "bg-[#7c5800] text-white shadow-sm"
+                                        : "text-[#5f5e5e] hover:text-[#7c5800]"
+                                        }`}
                                 >
                                     Saved ({kundlis?.length || 0})
                                 </button>
