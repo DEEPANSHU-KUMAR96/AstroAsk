@@ -10,11 +10,12 @@ const Navbar = () => {
 
   const isHoroscope = location.pathname === "/" || location.pathname.startsWith("/horoscope");
   const isKundli = location.pathname.startsWith("/kundli");
+  const isChat = location.pathname.startsWith("/chat");
 
   const navLinks = [
     { to: "/horoscope", label: "Horoscopes", active: isHoroscope },
     { to: "/kundli", label: "Kundli", active: isKundli },
-    { to: "#live-chat", label: "Live Chat", active: false },
+    { to: "/chat", label: "Live Chat", active: isChat },
     { to: "#tarot", label: "Tarot", active: false },
   ];
 

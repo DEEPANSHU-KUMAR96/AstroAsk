@@ -8,6 +8,7 @@ import Subscription from "../features/auth/pages/Subscription";
 import AuthCallback from "../features/auth/pages/AuthCallback";
 import Horoscope from "../features/horoscope/pages/Horoscope";
 import KundliPage from "../features/kundli/pages/Kundli";
+import ChatPage from "../features/chat/pages/Chat";
 
 const router = createBrowserRouter([
   {
@@ -25,6 +26,14 @@ const router = createBrowserRouter([
   {
     path: "/kundli/:id",
     element: <KundliPage />,
+  },
+  {
+    path: "/chat",
+    element: <ChatPage />,
+  },
+  {
+    path: "/chat/:id",
+    element: <ChatPage />,
   },
   {
     path: "/auth/callback",
