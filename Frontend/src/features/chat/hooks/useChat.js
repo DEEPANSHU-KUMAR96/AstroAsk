@@ -37,7 +37,7 @@ const useChat = () => {
         }
     };
 
-    const handleSendMessage = async (message, targetSessionId = null) => {
+    const handleSendMessage = async (message, targetSessionId = null, lang = "en") => {
         const sid = targetSessionId || activeSession?._id;
         if (!sid || isStreaming) return;
 
@@ -48,12 +48,16 @@ const useChat = () => {
         await sendMessageStream(
             sid,
             message,
-            (chunk) => dispatch(appendStreamChunk(chunk)),  // stream chunk arrives
-            () => dispatch(commitStreamedMessage()),    // stream done
+            (chunk) => dispatch(appendStreamChunk(chunk)),
+            (sessionId, title) => {
+                dispatch(commitStreamedMessage({ sessionId, title }));
+                dispatch(fetchSessions());
+            },
             (err) => {
                 dispatch(setStreaming(false));
                 toast.error(err || "Something went wrong");
-            }
+            },
+            lang
         );
     };
 

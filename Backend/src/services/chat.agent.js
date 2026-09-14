@@ -5,22 +5,29 @@ import { RunnableWithMessageHistory } from "@langchain/core/runnables";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { getUserKundliTool, getHoroscopeTool } from "./chatTools.service.js";
 
-const SYSTEM_PROMPT = `You are AstroAsk an expert Vedic astrologer and spiritual guide.
+const getSystemPrompt = (isHindi) => {
+    const langRule = isHindi
+        ? "CRITICAL LANGUAGE DIRECTIVE:\nYou MUST formulate and deliver your ENTIRE response strictly in Hindi language (हिंदी) using Devanagari script.\nDo NOT reply in English. Even if the user message or previous messages in the chat history are in English, the user has explicitly selected Hindi mode. Every heading, explanation, and remedy must be in Hindi."
+        : "CRITICAL LANGUAGE DIRECTIVE:\nYou MUST formulate and deliver your ENTIRE response strictly in English language.\nDo NOT reply in Hindi or use Devanagari script. Even if the user message, transliterated Hindi (Hinglish), or previous messages in the chat history are in Hindi, the user has explicitly selected English mode. Formulate all planetary insights, interpretations, and advice entirely in English.";
+
+    return `You are AstroAsk, an expert Vedic astrologer, cosmic counselor, and spiritual guide.
+
+${langRule}
 
 Your capabilities:
-- Analyze birth charts (kundli) and planetary positions
-- Provide horoscope readings (daily, weekly, monthly)
-- Give guidance on career, love, health, and finances based on astrology
-- Explain Vedic astrology concepts in simple language
+- Analyze birth charts (kundli), planetary placements, dashas, and yogas.
+- Provide insightful horoscope readings (daily, weekly, monthly).
+- Provide practical guidance on career, love, health, wealth, and destiny based on authentic Vedic astrology principles.
+- Explain astrological shastra and concepts with clarity, depth, and empathy.
 
 Guidelines:
-- Always be warm, empathetic, and encouraging
-- Use astrology tools when user asks about their chart or horoscope
-- If user speaks Hindi, respond in Hindi
-- Keep responses focused and practical
-- Never make definitive predictions or give frame insights as cosmic guidance`;
+- Always be warm, respectful, and encouraging.
+- When birth details are provided or asked, interpret the houses, planets, signs, and dashas systematically.
+- Use formatting: clear headings, bullet points, and markdown tables where comparing planets or houses.
+- Never make fatalistic predictions; frame astrological insights as cosmic tendencies and provide constructive Vedic remedies (gemstones, mantras, mindfulness, rituals).
+- Strictly adhere to the language specified above.`;
+};
 
-// In-memory session store (use Redis in production)
 const sessionStore = new Map();
 
 const getSessionHistory = (sessionId) => {
@@ -30,7 +37,6 @@ const getSessionHistory = (sessionId) => {
     return sessionStore.get(sessionId);
 };
 
-// Preload existing messages from DB into memory
 export const loadSessionHistory = async (sessionId, messages) => {
     const history = getSessionHistory(sessionId);
     const existing = await history.getMessages();
@@ -46,13 +52,14 @@ export const loadSessionHistory = async (sessionId, messages) => {
     }
 };
 
-// Clear session from memory (on logout or session delete)
 export const clearSessionHistory = (sessionId) => {
     sessionStore.delete(sessionId);
 };
 
-// Main agent — streaming
-export const runAgentStream = async (sessionId, userMessage, userId, onChunk) => {
+export const runAgentStream = async (sessionId, userMessage, userId, onChunk, lang = "en") => {
+    const isHindi = lang === "hi" || lang?.toLowerCase()?.startsWith("hi");
+    const systemPrompt = getSystemPrompt(isHindi);
+
     const llm = new ChatGroq({
         apiKey: process.env.GROQ_API_KEY,
         model: "openai/gpt-oss-120b",
@@ -68,7 +75,7 @@ export const runAgentStream = async (sessionId, userMessage, userId, onChunk) =>
     const agent = createReactAgent({
         llm,
         tools,
-        messageModifier: SYSTEM_PROMPT,
+        messageModifier: systemPrompt,
     });
 
     const agentWithHistory = new RunnableWithMessageHistory({
@@ -86,7 +93,6 @@ export const runAgentStream = async (sessionId, userMessage, userId, onChunk) =>
     );
 
     for await (const chunk of stream) {
-        // Agent streams multiple event types — only send text chunks
         if (chunk?.agent?.messages?.[0]?.content) {
             const text = chunk.agent.messages[0].content;
             if (typeof text === "string" && text) {
@@ -99,7 +105,36 @@ export const runAgentStream = async (sessionId, userMessage, userId, onChunk) =>
     return fullResponse;
 };
 
-// Non-streaming version (for title generation)
+export const generateChatTitle = async (userMessage, aiResponse = "", lang = "en") => {
+    try {
+        const cleanMsg = userMessage.replace(/^\[Language Instruction:[^\]]+\]\s*/i, "").trim();
+        const isHindi = lang === "hi" || /[ऀ-ॿ]/.test(cleanMsg);
+
+        const llm = new ChatGroq({
+            apiKey: process.env.GROQ_API_KEY,
+            model: "openai/gpt-oss-20b",
+            temperature: 0.3,
+        });
+
+        const prompt = isHindi
+            ? "आप एक वैदिक ज्योतिष चैट के लिए शीर्षक बना रहे हैं। नीचे दिए गए प्रश्न और उत्तर का सार केवल 2 से 4 शब्दों में दें। कोई उद्धरण चिह्न या अतिरिक्त शब्द न लगाएं।\nप्रश्न: " + cleanMsg.slice(0, 100) + "\nउत्तर: " + aiResponse.slice(0, 100) + "\nकेवल 2-4 शब्दों का शीर्षक:"
+            : "Summarize this Vedic astrology consultation into an elegant, extremely concise title of 2 to 4 words. Do not use quotes, punctuation, or prefixes like Title:.\nUser question: " + cleanMsg.slice(0, 100) + "\nAstrologer summary: " + aiResponse.slice(0, 100) + "\nTitle (2-4 words only):";
+
+        const res = await llm.invoke(prompt);
+        let title = typeof res?.content === "string" ? res.content.trim() : "";
+        title = title.replace(/^[\"'`#*]+|[\"'`#*]+$/g, "").replace(/^title:\s*/i, "").trim();
+        if (title && title.length >= 2 && title.length <= 40) {
+            return title;
+        }
+    } catch (err) {
+        console.error("AI title generation error:", err?.message);
+    }
+
+    const cleanMsg = userMessage.replace(/^\[Language Instruction:[^\]]+\]\s*/i, "").trim();
+    if (cleanMsg.length <= 3) return "Cosmic Consultation";
+    return cleanMsg.slice(0, 30);
+};
+
 export const runAgent = async (sessionId, userMessage, userId) => {
     const llm = new ChatGroq({
         apiKey: process.env.GROQ_API_KEY,
@@ -112,7 +147,7 @@ export const runAgent = async (sessionId, userMessage, userId) => {
         getHoroscopeTool(),
     ];
 
-    const agent = createReactAgent({ llm, tools, messageModifier: SYSTEM_PROMPT });
+    const agent = createReactAgent({ llm, tools, messageModifier: getSystemPrompt(false) });
 
     const agentWithHistory = new RunnableWithMessageHistory({
         runnable: agent,
@@ -122,12 +157,8 @@ export const runAgent = async (sessionId, userMessage, userId) => {
     });
 
     const result = await agentWithHistory.invoke(
-        {
-             messages: [new HumanMessage(userMessage)] 
-            },
-        {
-             configurable: { sessionId } 
-            }
+        { messages: [new HumanMessage(userMessage)] },
+        { configurable: { sessionId } }
     );
 
     return result.messages.at(-1)?.content || "";

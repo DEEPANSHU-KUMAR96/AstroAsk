@@ -3,10 +3,20 @@ import { Link, useLocation } from "react-router-dom";
 import { User, LogOut, Menu, X } from "lucide-react";
 import useAuth from "../../features/auth/hooks/useAuth";
 
-const Navbar = () => {
+const Navbar = ({ lang: propLang, onLangChange, onOpenChatSidebar }) => {
   const { user, isAuthenticated, handleLogout } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Sync language with fallback to localStorage
+  const [localLang, setLocalLang] = useState(() => localStorage.getItem("astro_lang") || "en");
+  const currentLang = propLang || localLang;
+
+  const handleLangSelect = (l) => {
+    setLocalLang(l);
+    localStorage.setItem("astro_lang", l);
+    if (onLangChange) onLangChange(l);
+  };
 
   const isHoroscope = location.pathname === "/" || location.pathname.startsWith("/horoscope");
   const isKundli = location.pathname.startsWith("/kundli");
@@ -23,13 +33,25 @@ const Navbar = () => {
     <nav className="bg-[#fdfcf9]/92 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-[rgba(26,26,26,0.08)] shadow-[0_4px_24px_rgba(0,0,0,0.04)] transition-all duration-300">
       <div className="flex justify-between items-center max-w-7xl mx-auto px-4 sm:px-6 md:px-10 lg:px-16 py-3.5 md:py-4">
 
-        {/* Brand Logo */}
-        <Link
-          to="/horoscope"
-          className="font-['Playfair_Display',Georgia,serif] text-xl sm:text-2xl md:text-[26px] font-bold text-[#7c5800] tracking-tight hover:opacity-90 transition-opacity"
-        >
-          AstroAsk
-        </Link>
+        {/* Brand Logo (+ Mobile Chat Sidebar Button) */}
+        <div className="flex items-center gap-2">
+          {isChat && onOpenChatSidebar && (
+            <button
+              onClick={onOpenChatSidebar}
+              className="md:hidden p-1.5 rounded-lg text-[#7c5800] hover:bg-[#f4ece1] transition-colors cursor-pointer"
+              aria-label="Open chat consultations"
+              title="Chat History"
+            >
+              <Menu size={18} />
+            </button>
+          )}
+          <Link
+            to="/horoscope"
+            className="font-['Playfair_Display',Georgia,serif] text-xl sm:text-2xl md:text-[26px] font-bold text-[#7c5800] tracking-tight hover:opacity-90 transition-opacity"
+          >
+            AstroAsk
+          </Link>
+        </div>
 
         {/* Desktop Nav Links */}
         <div className="hidden md:flex items-center gap-6 lg:gap-8 text-[11px] font-semibold uppercase tracking-[0.15em]">
@@ -47,8 +69,27 @@ const Navbar = () => {
           ))}
         </div>
 
-        {/* Right Area: Auth + Hamburger */}
+        {/* Right Area: Language Toggle + Auth + Hamburger */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Hindi / English Toggle Pill */}
+          <div className="flex items-center bg-[#f0ede8] rounded-full p-[3px] border border-[rgba(26,26,26,0.1)] shrink-0">
+            {["en", "hi"].map((l) => (
+              <button
+                key={l}
+                id={`navbar-lang-toggle-${l}`}
+                type="button"
+                onClick={() => handleLangSelect(l)}
+                className={`px-2.5 sm:px-3 py-[3px] text-[11px] font-bold rounded-full transition-all duration-150 cursor-pointer ${
+                  currentLang === l
+                    ? "bg-white text-[#7c5800] shadow-sm"
+                    : "text-[#5f5e5e] hover:text-[#7c5800]"
+                }`}
+              >
+                {l.toUpperCase()}
+              </button>
+            ))}
+          </div>
+
           {/* Auth */}
           <div className="flex gap-2 sm:gap-3 text-[11px] font-semibold uppercase tracking-[0.12em] items-center">
             {isAuthenticated && user ? (
@@ -109,7 +150,24 @@ const Navbar = () => {
 
       {/* Mobile Menu Drawer */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-[rgba(26,26,26,0.08)] bg-[#fdfcf9] px-4 py-4 flex flex-col gap-1 animate-fade-in-up">
+        <div className="md:hidden border-t border-[rgba(26,26,26,0.08)] bg-[#fdfcf9] px-4 py-4 flex flex-col gap-2 animate-fade-in-up">
+          <div className="flex items-center justify-between px-3 py-1 mb-1 border-b border-[rgba(26,26,26,0.06)] pb-2">
+            <span className="text-xs font-semibold text-[#5f5e5e]">Language</span>
+            <div className="flex items-center bg-[#f0ede8] rounded-full p-[2px] border border-[rgba(26,26,26,0.1)]">
+              {["en", "hi"].map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() => handleLangSelect(l)}
+                  className={`px-3 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                    currentLang === l ? "bg-white text-[#7c5800] shadow-sm" : "text-[#5f5e5e]"
+                  }`}
+                >
+                  {l.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
           {navLinks.map(({ to, label, active }) => (
             <Link
               key={label}

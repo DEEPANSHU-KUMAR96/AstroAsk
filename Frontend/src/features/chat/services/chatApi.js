@@ -71,14 +71,34 @@ const fetchWithAuth = async (url, options = {}) => {
 };
 
 // SSE streaming — returns EventSource-like stream via fetch
-export const sendMessageStream = async (sessionId, message, onChunk, onDone, onError) => {
+// lang: "en" | "hi" — enforces language via prompt directive, query param, and headers
+export const sendMessageStream = async (sessionId, message, onChunk, onDone, onError, lang = "en") => {
+    const isHindi = lang === "hi";
+    const langName = isHindi ? "Hindi" : "English";
+    const langInstruction = isHindi
+        ? "CRITICAL INSTRUCTION: You must respond strictly in Hindi language (हिंदी में जवाब दें)."
+        : "CRITICAL INSTRUCTION: You must respond strictly in English language. Do not use Hindi or Devanagari script.";
+
+    // Prepend unambiguous language directive so Groq/LLM obeys regardless of conversation history
+    const messageWithInstruction = `[Language Instruction: Respond ONLY in ${langName}]\n\n${message}`;
+
     try {
-        const response = await fetchWithAuth(`/api/chat/${sessionId}/message`, {
+        const response = await fetchWithAuth(`/api/chat/${sessionId}/message?lang=${lang}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "X-Language": lang,              // custom header fallback
+                "X-Language-Name": langName,
             },
-            body: JSON.stringify({ message }),
+            body: JSON.stringify({
+                message: messageWithInstruction,
+                originalMessage: message,
+                lang,                            // "en" | "hi"
+                language: langName,              // "English" | "Hindi"
+                preferredLanguage: langName,
+                responseLanguage: lang,
+                languageInstruction: langInstruction,  // explicit AI instruction
+            }),
         });
 
         if (!response.ok) {
@@ -111,7 +131,7 @@ export const sendMessageStream = async (sessionId, message, onChunk, onDone, onE
                     try {
                         const data = JSON.parse(line.slice(6));
                         if (data.type === "chunk" && data.text) onChunk(data.text);
-                        if (data.type === "done") onDone(data.sessionId);
+                        if (data.type === "done") onDone(data.sessionId, data.title);
                         if (data.type === "error") onError(data.message);
                     } catch {
                         // incomplete chunk
@@ -124,7 +144,7 @@ export const sendMessageStream = async (sessionId, message, onChunk, onDone, onE
             try {
                 const data = JSON.parse(buffer.trim().slice(6));
                 if (data.type === "chunk" && data.text) onChunk(data.text);
-                if (data.type === "done") onDone(data.sessionId);
+                if (data.type === "done") onDone(data.sessionId, data.title);
                 if (data.type === "error") onError(data.message);
             } catch {
                 // ignore

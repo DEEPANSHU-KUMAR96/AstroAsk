@@ -79,12 +79,21 @@ const chatSlice = createSlice({
         },
 
         // Called when stream is done — commit streamed text as assistant message
-        commitStreamedMessage: (state) => {
+        commitStreamedMessage: (state, action) => {
             if (state.activeSession && state.streamingText) {
                 state.activeSession.messages.push({
                     role: "assistant",
                     content: state.streamingText,
                 });
+            }
+            if (action.payload?.title) {
+                if (state.activeSession) {
+                    state.activeSession.title = action.payload.title;
+                }
+                if (action.payload?.sessionId) {
+                    const s = state.sessions.find((item) => item._id === action.payload.sessionId);
+                    if (s) s.title = action.payload.title;
+                }
             }
             state.streamingText = "";
             state.isStreaming = false;
