@@ -8,17 +8,19 @@ import passport from "passport";
 
 import { configurePassport } from "./config/passport.js";
 import errorHandler from "./middleware/errorHandler.js";
-import kundliRoutes from "./routes/kundli.routes.js";
+
 
 import authRoutes from "./routes/auth.routes.js";
 import horoscopeRoutes from "./routes/horoscope.routes.js";
+import kundliRoutes from "./routes/kundli.routes.js";
+import chatRoutes from "./routes/chat.routes.js";
 
 const app = express();
 
 
 app.use(helmet());
 app.use(cors({
-    origin: "http://localhost:5173" || "http://localhost:3000",
+    origin: ["http://localhost:5173", "http://localhost:3000"],
     credentials: true,
 }));
 
@@ -36,6 +38,7 @@ app.use(passport.initialize());
 app.use("/api/auth", authRoutes);
 app.use("/api/horoscope", horoscopeRoutes);
 app.use("/api/kundli", kundliRoutes);
+app.use("/api/chat", chatRoutes);
 
 // 404
 app.use((req, res) =>
