@@ -668,21 +668,21 @@ const ReadingSection = ({ reading, loading, onGenerate, lang, setLang, onClearRe
 
     if (!hasReading) {
         return (
-            <div className="text-center py-14 px-6 bg-[#fdfcf9] rounded-2xl border border-[rgba(26,26,26,0.08)]">
-                <Sparkles className="w-10 h-10 text-[#ffb800] mx-auto mb-3 animate-pulse" />
-                <h3 className="font-['Playfair_Display',Georgia,serif] text-xl font-bold text-[#1a1a1a] mb-2">
+            <div className="text-center py-8 sm:py-12 px-4 sm:px-6 bg-[#fdfcf9] rounded-2xl border border-[rgba(26,26,26,0.08)]">
+                <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-[#ffb800] mx-auto mb-3 animate-pulse" />
+                <h3 className="font-['Playfair_Display',Georgia,serif] text-lg sm:text-xl md:text-2xl font-bold text-[#1a1a1a] mb-2 leading-snug">
                     Reveal Your Personalized AI Horoscope & Kundli Reading
                 </h3>
-                <p className="text-sm text-[#5f5e5e] max-w-md mx-auto mb-6">
+                <p className="text-xs sm:text-sm text-[#5f5e5e] max-w-md mx-auto mb-6 leading-relaxed">
                     Our Vedic AI analyzes your planetary placements, lagna lord, and current dasha to generate in-depth insights into your destiny, career, love, and health.
                 </p>
 
-                <div className="flex items-center justify-center gap-3 mb-6">
+                <div className="flex items-center justify-center gap-2.5 sm:gap-3 mb-6 flex-wrap">
                     <span className="text-xs font-semibold text-[#5f5e5e] uppercase tracking-wider">Language:</span>
                     <button
                         type="button"
                         onClick={() => setLang("en")}
-                        className={`px-3 py-1 text-xs rounded-full font-medium transition cursor-pointer ${lang === "en" ? "bg-[#7c5800] text-white" : "bg-[#f4ece1] text-[#5f5e5e]"
+                        className={`px-3.5 py-1 text-xs rounded-full font-medium transition cursor-pointer ${lang === "en" ? "bg-[#7c5800] text-white" : "bg-[#f4ece1] text-[#5f5e5e]"
                             }`}
                     >
                         English
@@ -690,7 +690,7 @@ const ReadingSection = ({ reading, loading, onGenerate, lang, setLang, onClearRe
                     <button
                         type="button"
                         onClick={() => setLang("hi")}
-                        className={`px-3 py-1 text-xs rounded-full font-medium transition cursor-pointer ${lang === "hi" ? "bg-[#7c5800] text-white" : "bg-[#f4ece1] text-[#5f5e5e]"
+                        className={`px-3.5 py-1 text-xs rounded-full font-medium transition cursor-pointer ${lang === "hi" ? "bg-[#7c5800] text-white" : "bg-[#f4ece1] text-[#5f5e5e]"
                             }`}
                     >
                         हिंदी (Hindi)
@@ -699,9 +699,9 @@ const ReadingSection = ({ reading, loading, onGenerate, lang, setLang, onClearRe
 
                 <button
                     onClick={() => onGenerate(lang)}
-                    className="bg-[#ffb800] hover:bg-[#ffba20] text-[#6b4c00] font-bold px-8 py-3 rounded-full transition shadow-md active:scale-95 cursor-pointer"
+                    className="w-full sm:w-auto bg-[#ffb800] hover:bg-[#ffba20] text-[#6b4c00] font-bold px-6 sm:px-8 py-3 rounded-full transition shadow-md active:scale-95 cursor-pointer text-sm sm:text-base inline-flex items-center justify-center gap-2"
                 >
-                    Generate AI Vedic Reading ✨
+                    <span>✨</span> Generate AI Vedic Reading
                 </button>
             </div>
         );
@@ -1019,7 +1019,7 @@ const KundliDetail = ({ kundli, reading, readingLoading, onGetReading, onDelete,
             </div>
 
             {/* Navigation Tabs */}
-            <div className="tab-rail no-scrollbar scroll-fade-x border-b border-[rgba(26,26,26,0.08)] gap-1 px-1">
+            <div className="tab-rail no-scrollbar border-b border-[rgba(26,26,26,0.08)] gap-1 px-1">
                 {tabs.map((t) => (
                     <button
                         key={t.key}
@@ -1036,7 +1036,7 @@ const KundliDetail = ({ kundli, reading, readingLoading, onGetReading, onDelete,
             </div>
 
             {/* Tab Panes */}
-            <div className="bg-white rounded-2xl p-4 sm:p-6 border border-[rgba(26,26,26,0.08)] shadow-sm">
+            <div className="bg-white rounded-2xl p-3.5 sm:p-6 border border-[rgba(26,26,26,0.08)] shadow-sm">
                 {tab === "chart" && (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                         <div className="lg:col-span-7 flex flex-col items-center">
@@ -1059,24 +1059,88 @@ const KundliDetail = ({ kundli, reading, readingLoading, onGetReading, onDelete,
                 )}
 
                 {tab === "planets" && (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-[#fcfaf7] border-b border-[#f4ece1] text-xs font-bold uppercase tracking-wider text-[#7c5800]">
-                                <tr>
-                                    <th className="py-3 px-4">Planet</th>
-                                    <th className="py-3 px-4">Zodiac Sign</th>
-                                    <th className="py-3 px-4">House</th>
-                                    <th className="py-3 px-4">Nakshatra</th>
-                                    <th className="py-3 px-4">Degree</th>
-                                    <th className="py-3 px-4">Motion</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {kundli.planets?.map((p) => (
-                                    <PlanetRow key={p.name} planet={p} />
-                                ))}
-                            </tbody>
-                        </table>
+                    <div>
+                        {/* Mobile view: Responsive modern cards */}
+                        <div className="block sm:hidden space-y-2.5">
+                            {kundli.planets?.map((p) => {
+                                const cleanName = p.name.replace(/\(R\)/gi, "").trim();
+                                const isRetro = Boolean(p.isRetro || p.name.includes("(R)"));
+                                const shortCode = PLANET_SHORT[cleanName] || cleanName.slice(0, 2);
+                                const signInfo = getSignInfo(p.sign);
+
+                                return (
+                                    <div
+                                        key={p.name}
+                                        className="bg-[#fcfaf7] border border-[#f4ece1] rounded-xl p-3.5 shadow-2xs"
+                                    >
+                                        <div className="flex items-center justify-between mb-2.5">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="w-8 h-8 rounded-full bg-[#fff9ed] border border-[#ffb800]/40 flex items-center justify-center font-bold text-xs text-[#7c5800]">
+                                                    {shortCode}
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="font-bold text-[#1a1a1a] text-sm">
+                                                            {cleanName}
+                                                        </span>
+                                                        {isRetro && (
+                                                            <span className="text-[9px] bg-red-100 text-red-700 px-1.5 py-0.2 rounded font-bold">
+                                                                Retrograde
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-[11px] text-[#7c5800] font-medium">
+                                                        House {p.house} • {HOUSE_INFO[p.house]?.sanskrit || `Bhava ${p.house}`}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="text-right">
+                                                <span className="text-xs font-mono font-bold text-[#7c5800] bg-white px-2 py-0.5 rounded border border-[#f4ece1]">
+                                                    {p.degree ? `${p.degree.toFixed(2)}°` : "—"}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[rgba(26,26,26,0.06)] text-[11px]">
+                                            <div className="bg-white/80 p-2 rounded-lg border border-[rgba(26,26,26,0.04)]">
+                                                <span className="text-[#5f5e5e] text-[10px] uppercase font-semibold block">Zodiac Sign</span>
+                                                <span className="font-bold text-[#1a1a1a]">
+                                                    {p.sign} {signInfo.num ? `(#${signInfo.num})` : ""}
+                                                </span>
+                                            </div>
+                                            <div className="bg-white/80 p-2 rounded-lg border border-[rgba(26,26,26,0.04)]">
+                                                <span className="text-[#5f5e5e] text-[10px] uppercase font-semibold block">Nakshatra</span>
+                                                <span className="font-medium text-[#1a1a1a] truncate block">
+                                                    {p.nakshatra || "—"}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Desktop view: Table */}
+                        <div className="hidden sm:block overflow-x-auto">
+                            <table className="w-full text-sm text-left">
+                                <thead className="bg-[#fcfaf7] border-b border-[#f4ece1] text-xs font-bold uppercase tracking-wider text-[#7c5800]">
+                                    <tr>
+                                        <th className="py-3 px-4">Planet</th>
+                                        <th className="py-3 px-4">Zodiac Sign</th>
+                                        <th className="py-3 px-4">House</th>
+                                        <th className="py-3 px-4">Nakshatra</th>
+                                        <th className="py-3 px-4">Degree</th>
+                                        <th className="py-3 px-4">Motion</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {kundli.planets?.map((p) => (
+                                        <PlanetRow key={p.name} planet={p} />
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
 
@@ -1193,7 +1257,7 @@ const KundliPage = () => {
         <div className="min-h-screen flex flex-col bg-[#fbf9f8] text-[#1b1c1c] font-['Inter',sans-serif]">
             <Navbar />
 
-            <main className="grow w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-10 pt-24 md:pt-28 pb-20">
+            <main className="grow w-full max-w-5xl mx-auto px-3 sm:px-6 md:px-10 pt-20 sm:pt-24 md:pt-28 pb-20">
                 {/* Unauthenticated notice */}
                 {!isAuthenticated && (
                     <div className="mb-8 p-6 bg-[#fff9ed] border border-[#ffb800]/40 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
