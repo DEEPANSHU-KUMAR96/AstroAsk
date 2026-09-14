@@ -14,6 +14,7 @@ import authRoutes from "./routes/auth.routes.js";
 import horoscopeRoutes from "./routes/horoscope.routes.js";
 import kundliRoutes from "./routes/kundli.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
+import uploadRoutes from "./routes/upload.routes.js";
 
 const app = express();
 
@@ -39,6 +40,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/horoscope", horoscopeRoutes);
 app.use("/api/kundli", kundliRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/upload", uploadRoutes);
+
 
 // 404
 app.use((req, res) =>

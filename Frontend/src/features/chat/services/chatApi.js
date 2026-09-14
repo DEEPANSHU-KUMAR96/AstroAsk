@@ -36,6 +36,20 @@ export const getSessionsApi = () => api.get("/");
 export const getSessionApi = (id) => api.get(`/${id}`);
 export const deleteSessionApi = (id) => api.delete(`/${id}`);
 
+// Direct upload to /api/upload/chat-image
+export const uploadChatImageApi = async (file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    const token = localStorage.getItem("accessToken");
+    return axios.post("/api/upload/chat-image", formData, {
+        withCredentials: true,
+        headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+            "Content-Type": "multipart/form-data",
+        },
+    });
+};
+
 // Helper to get auth headers with automatic refresh on 401
 const fetchWithAuth = async (url, options = {}) => {
     let token = localStorage.getItem("accessToken");
@@ -71,35 +85,57 @@ const fetchWithAuth = async (url, options = {}) => {
 };
 
 // SSE streaming — returns EventSource-like stream via fetch
-// lang: "en" | "hi" — enforces language via prompt directive, query param, and headers
-export const sendMessageStream = async (sessionId, message, onChunk, onDone, onError, lang = "en") => {
+// Supports optional imageFile attachment sent as multipart/form-data directly to /api/chat/:id/message
+export const sendMessageStream = async (sessionId, message, onChunk, onDone, onError, lang = "en", imageFile = null) => {
     const isHindi = lang === "hi";
     const langName = isHindi ? "Hindi" : "English";
     const langInstruction = isHindi
         ? "CRITICAL INSTRUCTION: You must respond strictly in Hindi language (हिंदी में जवाब दें)."
         : "CRITICAL INSTRUCTION: You must respond strictly in English language. Do not use Hindi or Devanagari script.";
 
-    // Prepend unambiguous language directive so Groq/LLM obeys regardless of conversation history
-    const messageWithInstruction = `[Language Instruction: Respond ONLY in ${langName}]\n\n${message}`;
+    const cleanText = (message || "").trim();
+    const messageWithInstruction = cleanText
+        ? `[Language Instruction: Respond ONLY in ${langName}]\n\n${cleanText}`
+        : (imageFile ? `[Language Instruction: Respond ONLY in ${langName}]\nPlease analyze this astrology image / chart in ${langName}.` : "");
 
     try {
-        const response = await fetchWithAuth(`/api/chat/${sessionId}/message?lang=${lang}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-Language": lang,              // custom header fallback
-                "X-Language-Name": langName,
-            },
-            body: JSON.stringify({
-                message: messageWithInstruction,
-                originalMessage: message,
-                lang,                            // "en" | "hi"
-                language: langName,              // "English" | "Hindi"
-                preferredLanguage: langName,
-                responseLanguage: lang,
-                languageInstruction: langInstruction,  // explicit AI instruction
-            }),
-        });
+        let fetchOptions;
+
+        if (imageFile) {
+            const formData = new FormData();
+            formData.append("message", messageWithInstruction);
+            formData.append("lang", lang);
+            formData.append("image", imageFile);
+
+            fetchOptions = {
+                method: "POST",
+                headers: {
+                    "X-Language": lang,
+                    "X-Language-Name": langName,
+                },
+                body: formData,
+            };
+        } else {
+            fetchOptions = {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Language": lang,
+                    "X-Language-Name": langName,
+                },
+                body: JSON.stringify({
+                    message: messageWithInstruction,
+                    originalMessage: cleanText,
+                    lang,
+                    language: langName,
+                    preferredLanguage: langName,
+                    responseLanguage: lang,
+                    languageInstruction: langInstruction,
+                }),
+            };
+        }
+
+        const response = await fetchWithAuth(`/api/chat/${sessionId}/message?lang=${lang}`, fetchOptions);
 
         if (!response.ok) {
             let errMsg = "Request failed";

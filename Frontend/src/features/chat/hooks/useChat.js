@@ -37,12 +37,22 @@ const useChat = () => {
         }
     };
 
-    const handleSendMessage = async (message, targetSessionId = null, lang = "en") => {
+    const handleSendMessage = async (
+        message,
+        targetSessionId = null,
+        lang = "en",
+        imageFile = null,
+        imagePreviewUrl = null
+    ) => {
         const sid = targetSessionId || activeSession?._id;
         if (!sid || isStreaming) return;
 
-        // Optimistic UI — show user message immediately
-        dispatch(addUserMessage(message));
+        // Optimistic UI — show user message immediately (with image preview if present)
+        dispatch(addUserMessage({
+            content: message,
+            imageUrl: imagePreviewUrl,
+            imageName: imageFile?.name,
+        }));
         dispatch(setStreaming(true));
 
         await sendMessageStream(
@@ -57,7 +67,8 @@ const useChat = () => {
                 dispatch(setStreaming(false));
                 toast.error(err || "Something went wrong");
             },
-            lang
+            lang,
+            imageFile
         );
     };
 

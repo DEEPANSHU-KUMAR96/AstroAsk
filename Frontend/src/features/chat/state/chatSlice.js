@@ -65,9 +65,16 @@ const chatSlice = createSlice({
         // Called when user sends a message — optimistically add to UI
         addUserMessage: (state, action) => {
             if (state.activeSession) {
+                const payload = typeof action.payload === "string"
+                    ? { content: action.payload }
+                    : (action.payload || {});
+
                 state.activeSession.messages.push({
                     role: "user",
-                    content: action.payload,
+                    content: payload.content || (payload.imageUrl ? "Image attached" : ""),
+                    imageUrl: payload.imageUrl || null,
+                    imageName: payload.imageName || null,
+                    createdAt: new Date().toISOString(),
                 });
             }
         },

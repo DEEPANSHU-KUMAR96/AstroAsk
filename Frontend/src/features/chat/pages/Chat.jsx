@@ -2,9 +2,10 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
     Plus, Trash2, Send, Sparkles, Menu,
-    Paperclip, Mic,
+    Paperclip, Mic, X, Image as ImageIcon,
     Briefcase, Star, Zap, Heart, MessageSquare, Users,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import Navbar from "../../../app/components/Navbar";
 import useChat from "../hooks/useChat";
 import useAuth from "../../auth/hooks/useAuth";
@@ -312,17 +313,44 @@ const EmptyState = ({ onNew, c }) => (
     </div>
 );
 
-const UserBubble = ({ msg, initial }) => (
-    <div className="flex items-end justify-end gap-2.5">
-        <div className="flex flex-col items-end gap-1 max-w-[78%] sm:max-w-[65%]">
-            <div className="bg-[#1f1e1d] text-[#fbfaf8] text-[13.5px] leading-relaxed px-4 py-3 rounded-[20px] rounded-br-[4px] shadow-sm break-words whitespace-pre-wrap">
-                {cleanMsgText(msg.content)}
+const UserBubble = ({ msg, initial }) => {
+    const text = cleanMsgText(msg.content);
+    const hasText = text && text !== "Image attached";
+
+    return (
+        <div className="flex items-end justify-end gap-2.5">
+            <div className="flex flex-col items-end gap-1.5 max-w-[85%] sm:max-w-[70%]">
+                {msg.imageUrl && (
+                    <div className="overflow-hidden rounded-2xl border border-[rgba(26,26,26,0.12)] bg-white shadow-sm max-w-[280px] group">
+                        <img
+                            src={msg.imageUrl}
+                            alt={msg.imageName || "Astrology Chart or Palm"}
+                            className="w-full max-h-64 object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                            onClick={() => window.open(msg.imageUrl, "_blank")}
+                            loading="lazy"
+                        />
+                        <div className="px-3 py-1.5 bg-[#fafaf7] border-t border-[rgba(26,26,26,0.06)] flex items-center justify-between text-[10.5px] text-[#5f5e5e]">
+                            <span className="truncate max-w-[190px] font-medium">{msg.imageName || "Astrology Image"}</span>
+                            <span
+                                onClick={() => window.open(msg.imageUrl, "_blank")}
+                                className="text-[#7c5800] font-semibold ml-1 cursor-pointer hover:underline shrink-0"
+                            >
+                                View ↗
+                            </span>
+                        </div>
+                    </div>
+                )}
+                {hasText && (
+                    <div className="bg-[#1f1e1d] text-[#fbfaf8] text-[13.5px] leading-relaxed px-4 py-3 rounded-[20px] rounded-br-[4px] shadow-sm break-words whitespace-pre-wrap">
+                        {text}
+                    </div>
+                )}
+                {msg.createdAt && <span className="text-[10px] text-[#5f5e5e] font-medium pr-1">{msgTime(msg.createdAt)}</span>}
             </div>
-            {msg.createdAt && <span className="text-[10px] text-[#5f5e5e] font-medium pr-1">{msgTime(msg.createdAt)}</span>}
+            <div className="w-9 h-9 rounded-full bg-[#5b21b6] text-white text-[13px] font-bold flex items-center justify-center shrink-0 shadow-sm select-none mb-1">{initial}</div>
         </div>
-        <div className="w-9 h-9 rounded-full bg-[#5b21b6] text-white text-[13px] font-bold flex items-center justify-center shrink-0 shadow-sm select-none mb-1">{initial}</div>
-    </div>
-);
+    );
+};
 
 /* AI card — renders markdown content */
 const AICard = ({ msg, aiHeader }) => (
@@ -495,8 +523,11 @@ export default function ChatPage() {
     const [input, setInput] = useState("");
     const [lang, setLang] = useState(() => localStorage.getItem("astro_lang") || "en");
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
     const bottomRef = useRef(null);
     const taRef = useRef(null);
+    const fileInputRef = useRef(null);
     // Keep lang in a ref so sendMsg closure always reads the latest value
     const langRef = useRef(lang);
     useEffect(() => { langRef.current = lang; }, [lang]);
@@ -520,13 +551,45 @@ export default function ChatPage() {
         ta.style.height = `${Math.min(ta.scrollHeight, 130)}px`;
     }, [input]);
 
+    const handleImageSelect = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            toast.error("Please upload an image file (JPG, PNG, WebP, GIF)");
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("Image must be smaller than 5MB");
+            return;
+        }
+
+        setSelectedImage(file);
+        const url = URL.createObjectURL(file);
+        setImagePreview(url);
+        e.target.value = "";
+    };
+
+    const handleRemoveImage = () => {
+        if (imagePreview) URL.revokeObjectURL(imagePreview);
+        setSelectedImage(null);
+        setImagePreview(null);
+    };
+
     const selectChat = useCallback((sid) => { handleSelectSession(sid); navigate(`/chat/${sid}`); }, []);
     const startNewChat = useCallback(async () => { const s = await handleNewChat(); navigate(s?._id ? `/chat/${s._id}` : "/chat"); }, []);
 
     const sendMsg = useCallback(async (text) => {
         const msg = (text ?? input).trim();
-        if (!msg || isStreaming) return;
+        if ((!msg && !selectedImage) || isStreaming) return;
+
+        const imgFile = selectedImage;
+        const imgPreview = imagePreview;
+
         setInput("");
+        setSelectedImage(null);
+        setImagePreview(null);
+
         let sid = activeSession?._id;
         if (!sid) {
             const s = await handleNewChat();
@@ -535,8 +598,8 @@ export default function ChatPage() {
             navigate(`/chat/${sid}`);
         }
         // Always read lang from ref to avoid stale closure
-        handleSendMessage(msg, sid, langRef.current);
-    }, [input, isStreaming, activeSession]);
+        handleSendMessage(msg, sid, langRef.current, imgFile, imgPreview);
+    }, [input, selectedImage, imagePreview, isStreaming, activeSession]);
 
     const onKeyDown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMsg(); } };
 
@@ -575,13 +638,69 @@ export default function ChatPage() {
                     <div className="shrink-0 px-3 sm:px-6 pt-2.5 pb-3.5 border-t border-[rgba(26,26,26,0.08)] bg-white/95 backdrop-blur-sm">
                         <div className="max-w-3xl mx-auto">
                             <div className="border border-[rgba(26,26,26,0.14)] rounded-[20px] bg-white shadow-[0_2px_14px_rgba(0,0,0,0.06)] overflow-hidden focus-within:border-[#ffb800] focus-within:shadow-[0_0_0_3px_rgba(255,184,0,0.15)] transition-all duration-200">
+                                {/* Image preview thumbnail */}
+                                {imagePreview && (
+                                    <div className="px-3.5 pt-3 pb-1 flex items-center gap-3 bg-[#fffdf9] border-b border-[rgba(26,26,26,0.06)]">
+                                        <div className="relative group shrink-0">
+                                            <img
+                                                src={imagePreview}
+                                                alt="Preview"
+                                                className="w-12 h-12 object-cover rounded-xl border border-[#ffb800]/40 shadow-sm"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={handleRemoveImage}
+                                                className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow cursor-pointer transition-colors"
+                                                title="Remove image"
+                                            >
+                                                <X size={10} strokeWidth={3} />
+                                            </button>
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-[11.5px] font-semibold text-[#1a1a1a] truncate">
+                                                {selectedImage?.name || "Uploaded Chart/Palm Image"}
+                                            </p>
+                                            <p className="text-[10px] text-[#7c5800] font-medium">
+                                                {((selectedImage?.size || 0) / 1024).toFixed(0)} KB • Ready for Vedic analysis
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveImage}
+                                            className="text-[11px] text-[#5f5e5e] hover:text-red-500 font-medium px-2 py-1 rounded-md hover:bg-red-50 transition-colors cursor-pointer"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                )}
+
                                 <textarea id="chat-input" ref={taRef} rows={1} value={input}
                                     onChange={(e) => setInput(e.target.value)} onKeyDown={onKeyDown}
-                                    disabled={isStreaming} placeholder={c.placeholder}
+                                    disabled={isStreaming} placeholder={selectedImage ? (lang === "hi" ? "इस छवि के बारे में पूछें (वैकल्पिक)..." : "Ask about this chart or palm image (optional)...") : c.placeholder}
                                     className="w-full bg-transparent text-[13px] text-[#1a1a1a] placeholder-[#5f5e5e]/50 resize-none focus:outline-none disabled:opacity-50 px-4 pt-3.5 pb-2 leading-relaxed max-h-32" />
                                 <div className="flex items-center justify-between px-3 pb-2.5 gap-2">
                                     <div className="flex items-center gap-1">
-                                        <button className="p-1.5 rounded-lg text-[#5f5e5e]/50 hover:text-[#7c5800] hover:bg-[#f4ece1] transition-colors" aria-label="Attach"><Paperclip size={14} /></button>
+                                        {/* Hidden file input for ImageKit upload */}
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            accept="image/jpeg,image/png,image/webp,image/gif"
+                                            className="hidden"
+                                            onChange={handleImageSelect}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={isStreaming}
+                                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${selectedImage
+                                                    ? "text-[#7c5800] bg-[#fff9ed] border border-[#ffb800]/40 shadow-xs"
+                                                    : "text-[#5f5e5e]/50 hover:text-[#7c5800] hover:bg-[#f4ece1]"
+                                                }`}
+                                            aria-label="Attach chart or palm image"
+                                            title={selectedImage ? "Change image" : "Attach birth chart or palm image"}
+                                        >
+                                            <Paperclip size={14} />
+                                        </button>
                                         <button className="p-1.5 rounded-lg text-[#5f5e5e]/50 hover:text-[#7c5800] hover:bg-[#f4ece1] transition-colors" aria-label="Voice"><Mic size={14} /></button>
                                         <span className="hidden sm:inline-flex items-center gap-1.5 ml-1 px-2.5 py-1 bg-[#fff9ed] border border-[#ffb800]/30 rounded-full text-[10px] text-[#7c5800] font-semibold">
                                             <span className="w-1.5 h-1.5 rounded-full bg-[#ffb800]" />{c.natalPill}
@@ -589,7 +708,7 @@ export default function ChatPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className="hidden sm:block text-[10px] text-[#5f5e5e]/50 select-none">{c.pressEnter}</span>
-                                        <button id="send-message-btn" onClick={() => sendMsg()} disabled={!input.trim() || isStreaming}
+                                        <button id="send-message-btn" onClick={() => sendMsg()} disabled={(!input.trim() && !selectedImage) || isStreaming}
                                             className="w-9 h-9 bg-[#ffb800] hover:bg-amber-400 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed text-[#6b4c00] rounded-full flex items-center justify-center transition-all shadow-[0_2px_8px_rgba(255,184,0,0.4)] cursor-pointer shrink-0" aria-label="Send">
                                             <Send size={15} strokeWidth={2.5} />
                                         </button>

@@ -1,12 +1,11 @@
 import { Router } from "express";
-import { body } from "express-validator";
 import rateLimit from "express-rate-limit";
 import {
     createSession, getSessions, getSession,
     deleteSession, sendMessage,
 } from "../controllers/chat.controller.js";
 import { protect, requireVerified } from "../middleware/auth.js";
-import validate from "../middleware/validate.js";
+import { handleOptionalUpload } from "../services/upload.service.js";
 
 const router = Router();
 
@@ -28,8 +27,7 @@ router.delete("/:id", deleteSession);
 router.post(
     "/:id/message",
     msgLimiter,
-    [body("message").trim().notEmpty().withMessage("Message required")],
-    validate,
+    handleOptionalUpload,
     sendMessage
 );
 

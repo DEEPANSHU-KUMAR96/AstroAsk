@@ -45,6 +45,15 @@ if (!process.env.MISTRAL_API_KEY) {
 if(!process.env.OPENCAGE_API_KEY){
     throw new Error("OPENCAGE_API_KEY is not defined");
 }
+if(!process.env.IMAGEKIT_PUBLIC_KEY){
+    throw new Error("IMAGEKIT_PUBLIC_KEY is not defined");
+}
+if(!process.env.IMAGEKIT_PRIVATE_KEY){
+    throw new Error("IMAGEKIT_PRIVATE_KEY is not defined");
+}
+if(!process.env.IMAGEKIT_URL_ENDPOINT){
+    throw new Error("IMAGEKIT_URL_ENDPOINT is not defined");
+}
 
 
 export const config = {
@@ -65,6 +74,9 @@ export const config = {
     SMTP_USER: process.env.SMTP_USER || process.env.GOOGLE_USER,
     SMTP_PASS: process.env.SMTP_PASS || process.env.GOOGLE_APP_PASSWORD,
     EMAIL_FROM: process.env.EMAIL_FROM || process.env.GOOGLE_USER,
+    IMAGEKIT_PUBLIC_KEY: process.env.IMAGEKIT_PUBLIC_KEY,
+    IMAGEKIT_PRIVATE_KEY: process.env.IMAGEKIT_PRIVATE_KEY,
+    IMAGEKIT_URL_ENDPOINT: process.env.IMAGEKIT_URL_ENDPOINT,
     FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
 
 

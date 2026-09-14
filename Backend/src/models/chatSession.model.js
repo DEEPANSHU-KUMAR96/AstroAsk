@@ -11,6 +11,9 @@ const messageSchema = new mongoose.Schema(
             type: String,
             required: true
         },
+        imageUrl: String,
+        imageFileId: String,
+        imageName: String,
     },
     { _id: false }
 );
