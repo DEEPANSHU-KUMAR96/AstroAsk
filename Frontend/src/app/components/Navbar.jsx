@@ -21,12 +21,13 @@ const Navbar = ({ lang: propLang, onLangChange, onOpenChatSidebar }) => {
   const isHoroscope = location.pathname === "/" || location.pathname.startsWith("/horoscope");
   const isKundli = location.pathname.startsWith("/kundli");
   const isChat = location.pathname.startsWith("/chat");
+  const isTarot = location.pathname.startsWith("/tarot");
 
   const navLinks = [
     { to: "/horoscope", label: "Horoscopes", active: isHoroscope },
     { to: "/kundli", label: "Kundli", active: isKundli },
     { to: "/chat", label: "Live Chat", active: isChat },
-    { to: "#tarot", label: "Tarot", active: false },
+    { to: "/tarot", label: "Tarot", active: isTarot },
   ];
 
   return (
@@ -60,8 +61,8 @@ const Navbar = ({ lang: propLang, onLangChange, onOpenChatSidebar }) => {
               key={label}
               to={to}
               className={`pb-1 transition-all ${active
-                  ? "text-[#7c5800] border-b-2 border-[#ffb800] font-bold"
-                  : "text-[#5f5e5e] hover:text-[#7c5800]"
+                ? "text-[#7c5800] border-b-2 border-[#ffb800] font-bold"
+                : "text-[#5f5e5e] hover:text-[#7c5800]"
                 }`}
             >
               {label}
@@ -79,11 +80,10 @@ const Navbar = ({ lang: propLang, onLangChange, onOpenChatSidebar }) => {
                 id={`navbar-lang-toggle-${l}`}
                 type="button"
                 onClick={() => handleLangSelect(l)}
-                className={`px-2.5 sm:px-3 py-[3px] text-[11px] font-bold rounded-full transition-all duration-150 cursor-pointer ${
-                  currentLang === l
+                className={`px-2.5 sm:px-3 py-[3px] text-[11px] font-bold rounded-full transition-all duration-150 cursor-pointer ${currentLang === l
                     ? "bg-white text-[#7c5800] shadow-sm"
                     : "text-[#5f5e5e] hover:text-[#7c5800]"
-                }`}
+                  }`}
               >
                 {l.toUpperCase()}
               </button>
@@ -159,9 +159,8 @@ const Navbar = ({ lang: propLang, onLangChange, onOpenChatSidebar }) => {
                   key={l}
                   type="button"
                   onClick={() => handleLangSelect(l)}
-                  className={`px-3 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${
-                    currentLang === l ? "bg-white text-[#7c5800] shadow-sm" : "text-[#5f5e5e]"
-                  }`}
+                  className={`px-3 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${currentLang === l ? "bg-white text-[#7c5800] shadow-sm" : "text-[#5f5e5e]"
+                    }`}
                 >
                   {l.toUpperCase()}
                 </button>
@@ -174,8 +173,8 @@ const Navbar = ({ lang: propLang, onLangChange, onOpenChatSidebar }) => {
               to={to}
               onClick={() => setMobileOpen(false)}
               className={`text-sm font-semibold px-3 py-2.5 rounded-xl transition-all ${active
-                  ? "bg-[#fff9ed] text-[#7c5800] border-l-2 border-[#ffb800]"
-                  : "text-[#5f5e5e] hover:text-[#7c5800] hover:bg-[#f4ece1]/50"
+                ? "bg-[#fff9ed] text-[#7c5800] border-l-2 border-[#ffb800]"
+                : "text-[#5f5e5e] hover:text-[#7c5800] hover:bg-[#f4ece1]/50"
                 }`}
             >
               {label}

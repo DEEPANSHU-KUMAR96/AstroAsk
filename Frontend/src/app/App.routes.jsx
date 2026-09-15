@@ -9,11 +9,16 @@ import AuthCallback from "../features/auth/pages/AuthCallback";
 import Horoscope from "../features/horoscope/pages/Horoscope";
 import KundliPage from "../features/kundli/pages/Kundli";
 import ChatPage from "../features/chat/pages/Chat";
+import TarotPage from "../features/tarot/pages/Tarot";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <Navigate to="/horoscope" replace />,
+  },
+  {
+    path: "/tarot",
+    element: <TarotPage />,
   },
   {
     path: "/horoscope",

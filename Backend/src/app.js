@@ -15,6 +15,7 @@ import horoscopeRoutes from "./routes/horoscope.routes.js";
 import kundliRoutes from "./routes/kundli.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
+import tarotRoutes from "./routes/tarot.routes.js";
 
 const app = express();
 
@@ -41,11 +42,15 @@ app.use("/api/horoscope", horoscopeRoutes);
 app.use("/api/kundli", kundliRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/tarot", tarotRoutes);
 
 
 // 404
 app.use((req, res) =>
-    res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` })
+    res.status(404).json({
+        success: false,
+        message: `Route ${req.originalUrl} not found`
+    })
 );
 
 // Global error handler — must be last
