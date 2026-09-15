@@ -2,7 +2,7 @@ import { Mistral } from "@mistralai/mistralai";
 import { config } from "../config/config.js";
 
 const getMistralClient = () => {
-    const key = process.env.MISTRAL_API_KEY || config.MISTRAL_API_KEY;
+    const key = config.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY;
     if (!key) throw new Error("MISTRAL_API_KEY is not configured in backend .env");
     return new Mistral({ apiKey: key });
 };

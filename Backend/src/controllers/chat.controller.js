@@ -175,7 +175,10 @@ export const sendMessage = asyncHandler(async (req, res) => {
         res.write(`data: ${JSON.stringify({ type: "done", sessionId: session._id, title: session.title })}\n\n`);
     } catch (err) {
         console.error("Chat controller error:", err);
-        res.write(`data: ${JSON.stringify({ type: "error", message: err.message })}\n\n`);
+        res.write(`data: ${JSON.stringify({ 
+            type: "error",
+             message: err.message 
+            })}\n\n`);
     } finally {
         res.end();
     }
