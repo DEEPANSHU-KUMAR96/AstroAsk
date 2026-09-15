@@ -65,6 +65,186 @@ const PROMPT_SUGGESTIONS = [
     "What hidden obstacles should I be mindful of?",
 ];
 
+/* ═══════════════════════════════════════════════════════
+   MARKDOWN PARSER & RENDERER
+   Renders **bold**, *italic*, `code`, # headings,
+   - bullet lists, 1. numbered lists, | tables |, ---
+═══════════════════════════════════════════════════════ */
+
+function parseInline(str, keyPrefix = "") {
+    if (!str) return null;
+    const parts = [];
+    const re = /(<br\s*\/?>|\*\*[\s\S]+?\*\*|\*[\s\S]+?\*|`[^`]+`)/gi;
+    let last = 0, k = 0, m;
+    while ((m = re.exec(str)) !== null) {
+        if (m.index > last) parts.push(str.slice(last, m.index));
+        const tok = m[0];
+        if (tok.toLowerCase().startsWith("<br")) {
+            parts.push(<br key={`${keyPrefix}-br${k++}`} />);
+        } else if (tok.startsWith("**")) {
+            parts.push(<strong key={`${keyPrefix}-b${k++}`} className="font-bold text-[#1a1a1a]">{tok.slice(2, -2)}</strong>);
+        } else if (tok.startsWith("*")) {
+            parts.push(<em key={`${keyPrefix}-i${k++}`} className="italic text-[#2b261f]">{tok.slice(1, -1)}</em>);
+        } else if (tok.startsWith("`")) {
+            parts.push(<code key={`${keyPrefix}-c${k++}`} className="px-1.5 py-0.5 rounded bg-[#fff9ed] text-[#7c5800] text-[11px] font-mono border border-[#ffb800]/20">{tok.slice(1, -1)}</code>);
+        }
+        last = re.lastIndex;
+    }
+    if (last < str.length) parts.push(str.slice(last));
+    return parts.length === 1 && typeof parts[0] === "string" ? parts[0] : <>{parts}</>;
+}
+
+function isTableSep(line) {
+    return /^\|?[\s\-:|]+\|?$/.test(line.trim());
+}
+
+function isTableRow(line) {
+    const t = line.trim();
+    return t.startsWith("|") && (t.endsWith("|") || t.includes("|"));
+}
+
+function renderTable(tableLines, key) {
+    const rows = tableLines.filter((l) => !isTableSep(l));
+    if (rows.length < 1) return null;
+    const parse = (row) =>
+        row.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((c) => c.trim());
+
+    const [headers, ...body] = rows;
+    const hdrs = parse(headers);
+    return (
+        <div key={key} className="overflow-hidden my-4 rounded-xl border border-[#ffb800]/30 bg-white shadow-sm">
+            <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr className="bg-[#fff9ed] border-b border-[#ffb800]/25">
+                            {hdrs.map((h, i) => (
+                                <th key={i} className="px-3.5 py-2.5 font-bold text-[#7c5800] uppercase text-[10.5px] tracking-wider whitespace-nowrap">
+                                    {parseInline(h, `th${key}${i}`)}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[rgba(26,26,26,0.06)]">
+                        {body.map((r, ri) => (
+                            <tr key={ri} className={ri % 2 === 0 ? "bg-white hover:bg-[#fffdf7] transition-colors" : "bg-[#fafaf7] hover:bg-[#fffdf7] transition-colors"}>
+                                {parse(r).map((c, ci) => (
+                                    <td key={ci} className="px-3.5 py-2.5 text-[#2a2a2a] align-top leading-relaxed">
+                                        {parseInline(c, `td${key}${ri}${ci}`)}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+}
+
+const MarkdownContent = ({ text }) => {
+    if (!text) return null;
+    const lines = String(text).split("\n");
+    const elems = [];
+    let i = 0;
+    let tableAccum = [];
+
+    const flushTable = () => {
+        if (tableAccum.length) {
+            elems.push(renderTable(tableAccum, `tbl${i}`));
+            tableAccum = [];
+        }
+    };
+
+    while (i < lines.length) {
+        const line = lines[i];
+        const trimmed = line.trim();
+
+        // Table rows
+        if (isTableRow(trimmed)) {
+            tableAccum.push(trimmed);
+            i++;
+            continue;
+        }
+        if (tableAccum.length) flushTable();
+
+        // Blank line
+        if (!trimmed) {
+            i++;
+            continue;
+        }
+
+        // Horizontal divider
+        if (/^-{2,}$/.test(trimmed) || /^\*{2,}$/.test(trimmed)) {
+            elems.push(<hr key={`hr${i}`} className="my-4 border-[rgba(124,88,0,0.15)]" />);
+            i++;
+            continue;
+        }
+
+        // Headings (#, ##, ###)
+        const hm = trimmed.match(/^(#{1,4})\s+(.*)/);
+        if (hm) {
+            const level = hm[1].length;
+            const cn = level <= 2
+                ? "text-[15px] font-bold text-[#1b1c1c] mt-4 mb-2 flex items-center gap-1.5 font-['Playfair_Display',Georgia,serif]"
+                : "text-[13.5px] font-bold text-[#7c5800] mt-3.5 mb-1.5 flex items-center gap-1.5";
+            elems.push(
+                <div key={`h${i}`} className={cn}>
+                    <span className="text-[#ffb800] text-xs">✦</span>
+                    <span>{parseInline(hm[2], `hd${i}`)}</span>
+                </div>
+            );
+            i++;
+            continue;
+        }
+
+        // Bullet list
+        if (/^[-•*]\s/.test(trimmed)) {
+            const items = [];
+            while (i < lines.length && /^[-•*]\s/.test(lines[i].trim())) {
+                const itemText = lines[i].trim().replace(/^[-•*]\s/, "");
+                items.push(
+                    <li key={`li${i}`} className="flex items-start gap-2 leading-relaxed">
+                        <span className="text-[#ffb800] text-[10px] mt-1.5 shrink-0">✦</span>
+                        <span className="text-[#2b261f]">{parseInline(itemText, `li${i}`)}</span>
+                    </li>
+                );
+                i++;
+            }
+            elems.push(<ul key={`ul${i}`} className="space-y-1.5 my-2.5 pl-0.5">{items}</ul>);
+            continue;
+        }
+
+        // Numbered list
+        if (/^\d+[.)]\s/.test(trimmed)) {
+            const items = [];
+            while (i < lines.length && /^\d+[.)]\s/.test(lines[i].trim())) {
+                const itemNum = lines[i].trim().match(/^(\d+)[.)]\s/)[1];
+                const itemText = lines[i].trim().replace(/^\d+[.)]\s/, "");
+                items.push(
+                    <li key={`oli${i}`} className="flex items-start gap-2 leading-relaxed">
+                        <span className="font-bold text-[#7c5800] text-[11px] min-w-[18px] mt-0.5 shrink-0">{itemNum}.</span>
+                        <span className="text-[#2b261f]">{parseInline(itemText, `oli${i}`)}</span>
+                    </li>
+                );
+                i++;
+            }
+            elems.push(<ol key={`ol${i}`} className="space-y-1.5 my-2.5 pl-0.5">{items}</ol>);
+            continue;
+        }
+
+        // Regular line
+        elems.push(
+            <p key={`p${i}`} className="leading-[1.75] mb-2 text-[#2b261f]">
+                {parseInline(trimmed, `p${i}`)}
+            </p>
+        );
+        i++;
+    }
+    flushTable();
+
+    return <div className="space-y-1">{elems}</div>;
+};
+
 const ELEMENT_STYLES = {
     Fire: {
         bg: "bg-amber-500/10",
@@ -124,22 +304,16 @@ const CardDisplay = ({ card, position }) => {
                 {/* Card artwork face */}
                 <div className="relative my-3 p-5 rounded-xl border border-[rgba(124,88,0,0.2)] bg-gradient-to-b from-[#fffdf8] to-[#fbf7ee] text-center shadow-inner group-hover:border-[#ffb800] transition-colors">
                     {/* Tarot card glyph */}
-                    <div
-                        className={`text-4xl sm:text-5xl mb-3 transition-transform duration-500 inline-block ${card.isReversed ? "rotate-180" : ""
-                            }`}
-                    >
+                    <div className="text-4xl sm:text-5xl mb-3 inline-block select-none">
                         🃏
                     </div>
 
-                    <h4
-                        className={`font-['Playfair_Display',Georgia,serif] text-base sm:text-lg font-bold text-[#1b1c1c] tracking-wide transition-transform duration-500 ${card.isReversed ? "rotate-180 inline-block" : ""
-                            }`}
-                    >
+                    <h4 className="font-['Playfair_Display',Georgia,serif] text-base sm:text-lg font-bold text-[#1b1c1c] tracking-wide">
                         {card.name}
                     </h4>
 
                     {/* Upright vs Reversed Tag */}
-                    <div className="mt-2 flex justify-center">
+                    <div className="mt-2.5 flex justify-center">
                         <span
                             className={`text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full border ${card.isReversed
                                 ? "bg-rose-50 text-rose-700 border-rose-200"
@@ -182,7 +356,7 @@ const CardDisplay = ({ card, position }) => {
 };
 
 export default function TarotPage() {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
 
     // Language synchronization with local storage
     const [lang, setLang] = useState(() => localStorage.getItem("astro_lang") || "en");
@@ -537,42 +711,65 @@ export default function TarotPage() {
                             </div>
                         )}
 
-                        {/* AI Cosmic Interpretation */}
+                        {/* AI Cosmic Consultation Chat Stream */}
                         {(streamingText || isStreaming) && (
-                            <div className="bg-white border border-[rgba(124,88,0,0.15)] rounded-2xl p-6 sm:p-8 shadow-[0_4px_24px_rgba(0,0,0,0.04)] relative">
-                                <div className="flex items-center justify-between pb-4 mb-4 border-b border-[rgba(26,26,26,0.06)]">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-7 h-7 rounded-full bg-[#fff9ed] border border-[#ffb800]/40 flex items-center justify-center text-[#7c5800]">
-                                            <Sparkles size={14} />
+                            <div className="space-y-4 pt-2">
+                                {/* User Query Chat Bubble (if user entered a question) */}
+                                {question && (
+                                    <div className="flex items-end justify-end gap-2.5">
+                                        <div className="flex flex-col items-end gap-1 max-w-[85%] sm:max-w-[75%]">
+                                            <div className="bg-[#1f1e1d] text-[#fbfaf8] text-[13px] sm:text-[13.5px] leading-relaxed px-4 py-3 rounded-[20px] rounded-br-[4px] shadow-sm break-words">
+                                                {question}
+                                            </div>
+                                            <span className="text-[10px] text-[#8e8d8d] pr-1">
+                                                Query for {spreadName || activeSpreadConfig.label}
+                                            </span>
                                         </div>
-                                        <div>
-                                            <h3 className="font-['Playfair_Display',Georgia,serif] font-bold text-base text-[#1b1c1c]">
-                                                Cosmic Reading & Synthesis
-                                            </h3>
-                                            <p className="text-[11px] text-[#5f5e5e]">
-                                                {lang === "hi" ? "वैदिक व पाश्चात्य टैरो विश्लेषण" : "Vedic AI Oracle Interpretation"}
-                                            </p>
+                                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#5b21b6] text-white text-xs sm:text-[13px] font-bold flex items-center justify-center shrink-0 shadow-sm select-none mb-1">
+                                            {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
                                         </div>
                                     </div>
+                                )}
 
-                                    {streamingText && (
-                                        <button
-                                            type="button"
-                                            onClick={handleCopyReading}
-                                            className="text-xs text-[#7c5800] hover:text-[#1b1c1c] p-2 rounded-lg hover:bg-[#f4ece1]/50 transition flex items-center gap-1 cursor-pointer"
-                                            title="Copy reading"
-                                        >
-                                            {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-                                            <span className="hidden xs:inline">{copied ? "Copied" : "Copy"}</span>
-                                        </button>
-                                    )}
-                                </div>
+                                {/* AI Tarot Oracle Chat Bubble */}
+                                <div className="flex items-start gap-2.5 sm:gap-3.5">
+                                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-[#ffb800] to-[#f59e0b] text-[#5c3d00] text-sm sm:text-[15px] font-bold flex items-center justify-center shrink-0 shadow-[0_2px_8px_rgba(255,184,0,0.3)] select-none mt-1">
+                                        ✦
+                                    </div>
+                                    <div className="flex-1 max-w-[95%] sm:max-w-[90%] bg-white rounded-[22px] rounded-tl-[6px] border border-[#ffb800]/25 shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden">
+                                        {/* Chat Message Header */}
+                                        <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-3 border-b border-[#ffb800]/15 bg-[#fffdf9]">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs sm:text-[13px] font-bold text-[#7c5800]">
+                                                    AstroAsk Tarot Oracle
+                                                </span>
+                                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                <span className="text-[10px] font-semibold text-[#8e8d8d] bg-[#f4ece1]/70 px-2.5 py-0.5 rounded-full border border-[rgba(124,88,0,0.12)]">
+                                                    {lang === "hi" ? "वैदिक टैरो वाचन" : "Vedic Arcana Reading"}
+                                                </span>
+                                            </div>
 
-                                <div className="prose prose-stone max-w-none text-sm text-[#2b261f] leading-relaxed whitespace-pre-wrap">
-                                    {streamingText}
-                                    {isStreaming && (
-                                        <span className="inline-block w-2 h-4 bg-[#ffb800] ml-1.5 animate-pulse rounded-sm align-middle" />
-                                    )}
+                                            {streamingText && (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCopyReading}
+                                                    className="text-xs text-[#7c5800] hover:text-[#1b1c1c] px-2.5 py-1 rounded-lg hover:bg-[#f4ece1]/60 transition flex items-center gap-1.5 cursor-pointer"
+                                                    title="Copy reading"
+                                                >
+                                                    {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                                                    <span className="text-[11px] font-medium">{copied ? "Copied" : "Copy"}</span>
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {/* Formatted Markdown Chat Message */}
+                                        <div className="p-4 sm:p-6 text-sm text-[#2b261f] leading-relaxed">
+                                            <MarkdownContent text={streamingText} />
+                                            {isStreaming && (
+                                                <span className="inline-block w-2 h-4 bg-[#ffb800] ml-1.5 animate-pulse rounded-sm align-middle" />
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
